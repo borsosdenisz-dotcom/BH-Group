@@ -16,7 +16,9 @@ RUN apk add --no-cache su-exec && \
     addgroup -S bhgroup && adduser -S bhgroup -G bhgroup
 COPY --from=build /workspace/target/pms-backend.jar app.jar
 COPY entrypoint.sh /entrypoint.sh
-RUN chown bhgroup:bhgroup app.jar && chmod +x /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && \
+    chown bhgroup:bhgroup app.jar && \
+    chmod +x /entrypoint.sh
 
 EXPOSE 8080
 ENTRYPOINT ["/entrypoint.sh"]

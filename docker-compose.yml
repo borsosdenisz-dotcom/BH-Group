@@ -1,4 +1,13 @@
 services:
+  mailpit:
+    image: axllent/mailpit:v1.31.0
+    container_name: bhgroup-mailpit
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+    networks:
+      - bhgroup-network
+
   postgres:
     image: postgres:16-alpine
     container_name: bhgroup-postgres
@@ -28,6 +37,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
       DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-bhgroup_pms}
@@ -41,6 +52,8 @@ services:
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       MAIL_FROM: ${MAIL_FROM}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-false}
+      MAIL_SMTP_STARTTLS_ENABLE: ${MAIL_SMTP_STARTTLS_ENABLE:-false}
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
       APP_NAME: ${APP_NAME:-BH Group PMS}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}

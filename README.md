@@ -51,13 +51,19 @@ configuration, Docker Compose.
 
 ```bash
 cp .env.example .env
-# editează .env și completează SUPER_ADMIN_EMAIL / SUPER_ADMIN_PASSWORD, JWT_SECRET, MAIL_*
+# editează .env și schimbă SUPER_ADMIN_EMAIL / SUPER_ADMIN_PASSWORD și JWT_SECRET
+# MAIL_* trebuie schimbate doar când folosești un server SMTP real
 docker compose up --build
 ```
 
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8080/api/v1
 - Swagger UI: http://localhost:8080/swagger-ui.html
+- Local email inbox (Mailpit): http://localhost:8025
+
+În configurația locală implicită, emailurile sunt capturate de Mailpit și pot fi
+inspectate în browser. Pentru un mediu găzduit, înlocuiește valorile `MAIL_*` cu
+serverul SMTP real și activează autentificarea/TLS după cerințele furnizorului.
 
 La primul start, dacă `SUPER_ADMIN_EMAIL` / `SUPER_ADMIN_PASSWORD` sunt setate și nu
 există încă niciun cont `SUPER_ADMIN`, backend-ul creează automat primul cont de
