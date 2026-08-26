@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.bhgroup.pms.common.exception.BadRequestException;
@@ -304,5 +306,60 @@ class UserAdminServiceTest {
         assertThatThrownBy(() -> userAdminService.resendInvite(targetUser.getId(), "SUPER_ADMIN"))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("pending invitations");
+    }
+
+    @Test
+    void delete_permanentlyRemovesADemoAccountWithNoAssociatedData() {
+        targetUser.setRole(Role.CLEANER);
+        when(userRepository.findById(targetUser.getId())).thenReturn(Optional.of(targetUser));
+        when(propertyRepository.findByOwnerId(targetUser.getId())).thenReturn(List.of());
+        UUID actingUserId = UUID.randomUUID();
+
+        userAdminService.delete(targetUser.getId(), actingUserId, "SUPER_ADMIN");
+
+        verify(userRepository).delete(targetUser);
+        verify(auditService).record(eq(com.bhgroup.pms.domain.AuditAction.USER_DELETED), eq(null),
+                any(String.class), eq(null), eq(null));
+    }
+
+    @Test
+    void delete_rejectsDeletingOwnAccount() {
+        when(userRepository.findById(targetUser.getId())).thenReturn(Optional.of(targetUser));
+
+        assertThatThrownBy(() -> userAdminService.delete(targetUser.getId(), targetUser.getId(), "SUPER_ADMIN"))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("own account");
+
+        verify(userRepository, never()).delete(any(User.class));
+    }
+
+    @Test
+    void delete_rejectsDeletingTheLastActiveSuperAdmin() {
+        targetUser.setRole(Role.SUPER_ADMIN);
+        when(userRepository.findById(targetUser.getId())).thenReturn(Optional.of(targetUser));
+        when(userRepository.countByRoleAndStatusAndIdNot(Role.SUPER_ADMIN, UserStatus.ACTIVE, targetUser.getId()))
+                .thenReturn(0L);
+        UUID actingUserId = UUID.randomUUID();
+
+        assertThatThrownBy(() -> userAdminService.delete(targetUser.getId(), actingUserId, "SUPER_ADMIN"))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("last active Super Admin");
+
+        verify(userRepository, never()).delete(any(User.class));
+    }
+
+    @Test
+    void delete_rejectsDeletingAUserWhoOwnsProperties() {
+        targetUser.setRole(Role.OWNER);
+        when(userRepository.findById(targetUser.getId())).thenReturn(Optional.of(targetUser));
+        Property property = Property.builder().name("Some property").build();
+        when(propertyRepository.findByOwnerId(targetUser.getId())).thenReturn(List.of(property));
+        UUID actingUserId = UUID.randomUUID();
+
+        assertThatThrownBy(() -> userAdminService.delete(targetUser.getId(), actingUserId, "SUPER_ADMIN"))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Reassign or delete this user's properties");
+
+        verify(userRepository, never()).delete(any(User.class));
     }
 }

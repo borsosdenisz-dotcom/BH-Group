@@ -18,6 +18,7 @@ import {
   Trash2,
   UserPlus,
   Users as UsersIcon,
+  UserX,
 } from "lucide-react"
 import {
   Dialog,
@@ -74,6 +75,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { DataPagination } from "@/components/ui/data-pagination"
 import {
   useCreateUser,
+  useDeleteUser,
   useResendInvite,
   useResetUserMfa,
   useUpdateUser,
@@ -488,6 +490,42 @@ function DisableUserDialog({
   )
 }
 
+function DeleteUserDialog({
+  user,
+  open,
+  onOpenChange,
+}: {
+  user: UserResponse
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const deleteUser = useDeleteUser()
+
+  function handleConfirm() {
+    deleteUser.mutate(user.id, { onSuccess: () => onOpenChange(false) })
+  }
+
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Ștergi definitiv acest cont?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {user.firstName} {user.lastName} ({user.email}) va fi șters din platformă, împreună
+            cu sesiunile și invitațiile asociate. Ești sigur? Această acțiune este permanentă.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Anulează</AlertDialogCancel>
+          <AlertDialogAction disabled={deleteUser.isPending} onClick={handleConfirm}>
+            Șterge
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+
 function UserRowActions({
   user,
   meId,
@@ -501,6 +539,7 @@ function UserRowActions({
 }) {
   const [editOpen, setEditOpen] = useState(false)
   const [disableOpen, setDisableOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
   const updateStatus = useUpdateUserStatus()
   const resetMfa = useResetUserMfa()
   const resendInvite = useResendInvite()
@@ -574,11 +613,17 @@ function UserRowActions({
             </DropdownMenuItem>
           )}
           {!isSelf && user.status !== "DISABLED" && (
+            <DropdownMenuItem variant="destructive" onClick={() => setDisableOpen(true)}>
+              <Trash2 className="size-4" />
+              Dezactivează definitiv
+            </DropdownMenuItem>
+          )}
+          {!isSelf && isSuperAdmin && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={() => setDisableOpen(true)}>
-                <Trash2 className="size-4" />
-                Dezactivează definitiv
+              <DropdownMenuItem variant="destructive" onClick={() => setDeleteOpen(true)}>
+                <UserX className="size-4" />
+                Șterge cont
               </DropdownMenuItem>
             </>
           )}
@@ -586,6 +631,7 @@ function UserRowActions({
       </DropdownMenu>
       <EditUserDialog user={user} actingRole={actingRole} open={editOpen} onOpenChange={setEditOpen} />
       <DisableUserDialog user={user} open={disableOpen} onOpenChange={setDisableOpen} />
+      <DeleteUserDialog user={user} open={deleteOpen} onOpenChange={setDeleteOpen} />
     </>
   )
 }

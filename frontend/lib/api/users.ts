@@ -47,4 +47,6 @@ export const usersApi = {
   resendInvite: (id: string) => apiClient.post<UserResponse>(`/users/${id}/resend-invite`),
 
   resetMfa: (id: string) => apiClient.post<void>(`/users/${id}/reset-mfa`),
+
+  delete: (id: string) => apiClient.delete<void>(`/users/${id}`),
 }

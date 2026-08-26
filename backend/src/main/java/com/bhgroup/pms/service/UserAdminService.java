@@ -219,6 +219,55 @@ public class UserAdminService {
         }
     }
 
+    @Transactional
+    public void delete(UUID id, UUID actingUserId, String actingRole) {
+        User user = findOrThrow(id);
+        assertCanAssignRole(user.getRole(), actingRole);
+        assertCanDelete(user, actingUserId);
+
+        UUID deletedId = user.getId();
+        String deletedEmail = user.getEmail();
+
+        // Refresh/verification tokens, MFA recovery codes and notifications
+        // cascade-delete at the DB level (ON DELETE CASCADE); properties,
+        // messages, cleaning/maintenance assignments etc. are ON DELETE SET
+        // NULL, so this never orphans a foreign key.
+        userRepository.delete(user);
+
+        auditService.record(AuditAction.USER_DELETED, null,
+                "User " + deletedId + " (" + deletedEmail + ") permanently deleted by administrator " + actingUserId,
+                null, null);
+    }
+
+    /**
+     * Hard delete is strictly more destructive than deactivating, so it needs
+     * at least the same guards as assertCanDeactivate (self-action, last
+     * active Super Admin), plus a data-loss guard deactivate doesn't need:
+     * deleting the row would silently orphan or null out anything the user
+     * owns, so an owner (or anyone else) still holding properties is blocked
+     * outright rather than cascaded through. Reservations are never linked to
+     * a system User account (guests are captured as plain fields), so there
+     * is nothing to check there.
+     */
+    private void assertCanDelete(User user, UUID actingUserId) {
+        if (user.getId().equals(actingUserId)) {
+            throw new BadRequestException("You cannot delete your own account");
+        }
+
+        if (user.getRole() == Role.SUPER_ADMIN && user.getStatus() == UserStatus.ACTIVE) {
+            long otherActiveSuperAdmins = userRepository
+                    .countByRoleAndStatusAndIdNot(Role.SUPER_ADMIN, UserStatus.ACTIVE, user.getId());
+            if (otherActiveSuperAdmins == 0) {
+                throw new BadRequestException("Cannot delete the last active Super Admin account");
+            }
+        }
+
+        if (!propertyRepository.findByOwnerId(user.getId()).isEmpty()) {
+            throw new BadRequestException(
+                    "Reassign or delete this user's properties before deleting their account");
+        }
+    }
+
     /**
      * Same spirit as assertCanDeactivate: changing a Super Admin's role away
      * from SUPER_ADMIN is functionally equivalent to disabling their admin

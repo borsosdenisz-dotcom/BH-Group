@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -84,6 +85,14 @@ public class UserAdminController {
         UserResponse response = userAdminService.updateStatus(
                 id, request, SecurityUtils.requireCurrentUserId(), currentRole());
         return ResponseEntity.ok(ApiResponse.success(response, "User status updated successfully"));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @Operation(summary = "Permanently delete a user account")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
+        userAdminService.delete(id, SecurityUtils.requireCurrentUserId(), currentRole());
+        return ResponseEntity.ok(ApiResponse.message("User deleted successfully"));
     }
 
     @PostMapping("/{id}/resend-invite")

@@ -84,6 +84,21 @@ export function useUpdateUserStatus() {
   })
 }
 
+export function useDeleteUser() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => usersApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] })
+      toast.success("Cont șters definitiv.")
+    },
+    onError: (error) => {
+      toast.error(errorMessage(error, "Nu am putut șterge contul."))
+    },
+  })
+}
+
 export function useResetUserMfa() {
   const queryClient = useQueryClient()
 
