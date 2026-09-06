@@ -41,7 +41,7 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <Card className="border-white/15 bg-background/95 shadow-2xl backdrop-blur-md">
+    <Card className="border-border bg-card shadow-[var(--shadow-md)]">
       <CardHeader>
         <CardTitle className="text-xl">Recuperare parolă</CardTitle>
         <CardDescription>

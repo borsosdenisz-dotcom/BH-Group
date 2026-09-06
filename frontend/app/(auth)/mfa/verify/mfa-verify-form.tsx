@@ -22,6 +22,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useVerifyMfaLogin, useVerifyMfaRecoveryLogin } from "@/hooks/use-auth"
 import { useAuthStore } from "@/lib/stores/auth-store"
 
@@ -66,7 +67,7 @@ export function MfaVerifyForm() {
   const isPending = verifyMfaLogin.isPending || verifyMfaRecoveryLogin.isPending
 
   return (
-    <Card className="border-white/15 bg-background/95 shadow-2xl backdrop-blur-md">
+    <Card className="border-border bg-card shadow-[var(--shadow-md)]">
       <CardHeader>
         <CardTitle className="text-xl">Verificare în doi pași</CardTitle>
         <CardDescription>
@@ -78,6 +79,7 @@ export function MfaVerifyForm() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {(verifyMfaLogin.isError || verifyMfaRecoveryLogin.isError) && <Alert variant="destructive"><AlertDescription>{(verifyMfaLogin.error instanceof Error && verifyMfaLogin.error.message) || (verifyMfaRecoveryLogin.error instanceof Error && verifyMfaRecoveryLogin.error.message) || "Codul nu a putut fi verificat."}</AlertDescription></Alert>}
             <FormField
               control={form.control}
               name="code"

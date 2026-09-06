@@ -21,6 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useLogin } from "@/hooks/use-auth"
 
 const loginSchema = z.object({
@@ -42,7 +43,7 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="border-white/15 bg-background/95 shadow-2xl backdrop-blur-md">
+    <Card className="border-border bg-card shadow-[var(--shadow-md)]">
       <CardHeader>
         <CardTitle className="text-xl">Autentificare echipă</CardTitle>
         <CardDescription>
@@ -52,6 +53,7 @@ export function LoginForm() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {login.isError && <Alert variant="destructive"><AlertDescription>{login.error instanceof Error ? login.error.message : "Autentificarea a eșuat. Verifică datele introduse."}</AlertDescription></Alert>}
             <FormField
               control={form.control}
               name="email"

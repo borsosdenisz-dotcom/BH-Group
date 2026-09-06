@@ -1,73 +1,36 @@
-"use client"
-
 import Image from "next/image"
 import Link from "next/link"
-import { Building2 } from "lucide-react"
+import { CheckCircle2 } from "lucide-react"
+import { BrandMark } from "@/components/marketing/brand-mark"
 import { ThemeToggle } from "@/components/layout/theme-toggle"
-import { SiteBackgroundVideo } from "@/components/marketing/site-background-video"
-import { useCinematicBackgroundEnabled } from "@/hooks/use-cinematic-background-enabled"
-import { cn } from "@/lib/utils"
 
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const cinematicEnabled = useCinematicBackgroundEnabled()
+const AUTH_POINTS = ["Acces bazat pe rol", "Autentificare în doi pași", "Sesiuni protejate"]
 
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      className={cn(
-        "relative flex min-h-screen flex-col overflow-hidden text-white",
-        !cinematicEnabled && "bg-navy"
-      )}
-    >
-      {cinematicEnabled ? (
-        <>
-          <SiteBackgroundVideo />
-          {/* Extra darkening on top of the page-wide video for the white form/text. */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/80" />
-        </>
-      ) : (
-        <>
-          {/* Mobile/tablet/reduced-motion/save-data - identical to the
-              pre-video-background auth layout. */}
-          <Image
-            src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=2000&q=80&auto=format&fit=crop"
-            alt="Interior modern administrat de BH Group"
-            fill
-            sizes="100vw"
-            priority
-            className="kb-image-loop absolute inset-0 object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/80" />
-        </>
-      )}
-
-      <header className="relative z-10 flex items-center justify-between px-6 py-6 sm:px-10">
-        <Link href="/" className="flex items-center gap-2 font-heading text-lg font-semibold tracking-tight text-white">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Building2 className="size-4" />
-          </span>
-          BH Group
-        </Link>
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
+      <header className="relative z-20 flex h-20 items-center justify-between px-5 sm:px-8 lg:px-10">
+        <Link href="/" aria-label="BH Group — pagina principală" className="rounded-md bg-navy px-3 py-2"><BrandMark inverse /></Link>
         <ThemeToggle />
       </header>
 
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-10">
-        <div className="w-full max-w-sm">{children}</div>
-        <p className="mt-6 max-w-sm text-center text-sm text-white/60">
-          Cauți o proprietate de rezervat?{" "}
-          <Link href="/book" className="underline underline-offset-2 hover:text-white">
-            Caută aici
-          </Link>
-          , fără cont necesar.
-        </p>
+      <main className="relative z-10 grid flex-1 lg:grid-cols-[1.05fr_.95fr]">
+        <div className="relative hidden overflow-hidden lg:block">
+          <Image src="/images/auth-hero.jpg" alt="Interior luminos administrat pentru oaspeți" fill sizes="55vw" priority className="object-cover" />
+          <div className="absolute inset-0 bg-navy/66" />
+          <div className="absolute inset-x-0 bottom-0 p-12 text-white xl:p-16">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brass">Spațiul echipei</p>
+            <h1 className="mt-4 max-w-xl font-heading text-4xl font-semibold leading-tight tracking-tight xl:text-5xl">Administrarea proprietăților, într-un mediu controlat.</h1>
+            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-white/72">{AUTH_POINTS.map((point) => <li key={point} className="flex items-center gap-2"><CheckCircle2 className="size-4 text-brass" />{point}</li>)}</ul>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center px-5 py-10 sm:px-8 lg:px-12">
+          <div className="w-full max-w-md">{children}</div>
+          <p className="mt-6 max-w-md text-center text-sm text-muted-foreground">Cauți o proprietate de rezervat? <Link href="/book" className="font-semibold text-foreground underline underline-offset-4 hover:text-primary">Caută aici</Link>, fără cont necesar.</p>
+        </div>
       </main>
 
-      <footer className="relative z-10 px-6 py-6 text-center text-xs text-white/50">
-        © {new Date().getFullYear()} BH Group. Toate drepturile rezervate.
-      </footer>
+      <footer className="relative z-10 border-t border-border px-5 py-5 text-center text-xs text-muted-foreground">© {new Date().getFullYear()} BH Group. Toate drepturile rezervate.</footer>
     </div>
   )
 }
