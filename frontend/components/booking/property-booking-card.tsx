@@ -62,11 +62,8 @@ export function PropertyBookingCard({
           : "loading"
 
   return (
-    <Card className={cn("gap-4 border-primary/20 py-5 shadow-[var(--shadow-sm)]", className)}>
+    <Card className={cn("gap-4 py-5", className)}>
       <CardContent className="flex flex-col gap-5 px-5">
-        <div className="border-b border-border pb-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Cerere de rezervare</p>
-        </div>
         <div>
           {property.basePricePerNight != null ? (
             <p className="flex items-baseline gap-1">
@@ -91,7 +88,7 @@ export function PropertyBookingCard({
           <button
             type="button"
             onClick={onScrollToCalendar}
-            className="flex min-h-14 flex-col gap-0.5 rounded-md border border-border px-3 py-2 text-left transition-colors hover:border-primary/40 hover:bg-accent/40"
+            className="flex flex-col gap-0.5 rounded-lg border border-border/60 px-3 py-2 text-left transition-colors hover:border-border hover:bg-accent/40"
           >
             <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Sosire</span>
             <span className="text-sm font-medium">{checkIn ? formatShortDate(checkIn) : "Alege data"}</span>
@@ -99,14 +96,14 @@ export function PropertyBookingCard({
           <button
             type="button"
             onClick={onScrollToCalendar}
-            className="flex min-h-14 flex-col gap-0.5 rounded-md border border-border px-3 py-2 text-left transition-colors hover:border-primary/40 hover:bg-accent/40"
+            className="flex flex-col gap-0.5 rounded-lg border border-border/60 px-3 py-2 text-left transition-colors hover:border-border hover:bg-accent/40"
           >
             <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Plecare</span>
             <span className="text-sm font-medium">{checkOut ? formatShortDate(checkOut) : "Alege data"}</span>
           </button>
         </div>
 
-        <div className="flex flex-col gap-1.5 rounded-md border border-border px-3 py-2.5">
+        <div className="flex flex-col gap-1.5 rounded-lg border border-border/60 px-3 py-2.5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Oaspeți</span>
             <div className="flex items-center gap-3">
@@ -114,6 +111,7 @@ export function PropertyBookingCard({
                 type="button"
                 size="icon"
                 variant="outline"
+                className="size-7"
                 disabled={guests <= 1}
                 onClick={() => onGuestsChange(guests - 1)}
                 aria-label="Scade numărul de oaspeți"
@@ -127,6 +125,7 @@ export function PropertyBookingCard({
                 type="button"
                 size="icon"
                 variant="outline"
+                className="size-7"
                 disabled={guests >= property.maxGuests}
                 onClick={() => onGuestsChange(guests + 1)}
                 aria-label="Crește numărul de oaspeți"
@@ -182,7 +181,7 @@ export function PropertyBookingCard({
                     </div>
                   )}
                   {quote.discountAmount != null && quote.discountAmount > 0 && (
-                    <div className="flex justify-between text-success">
+                    <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
                       <span>Reducere{quote.discountPercent ? ` (${quote.discountPercent}%)` : ""}</span>
                       <span>
                         −{formatPrice(quote.discountAmount)} {quote.currency}
@@ -210,7 +209,7 @@ export function PropertyBookingCard({
 
         {ctaState === "available" ? (
           <Link href={bookingHref} className={cn(buttonVariants({ size: "lg" }), "w-full")}>
-            Continuă către cerere
+            Rezervă
           </Link>
         ) : (
           <Button size="lg" disabled className="w-full">

@@ -4,7 +4,6 @@ import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { CheckCircle2 } from "lucide-react"
 import { Reveal } from "@/components/marketing/reveal"
 import { HoneypotField } from "@/components/marketing/honeypot-field"
 import { Button } from "@/components/ui/button"
@@ -37,7 +36,6 @@ export function LeadFormSection() {
   const createLead = useCreateLead()
   const utm = useUtmParams()
   const [honeypot, setHoneypot] = useState("")
-  const [submitted, setSubmitted] = useState(false)
   const form = useForm<LeadFormValues>({
     resolver: zodResolver(leadSchema),
     defaultValues: { fullName: "", email: "", phone: "", city: "", message: "", consentGiven: false },
@@ -57,13 +55,13 @@ export function LeadFormSection() {
         utmCampaign: utm.utmCampaign,
         website: honeypot,
       },
-      { onSuccess: () => { form.reset(); setSubmitted(true) } }
+      { onSuccess: () => form.reset() }
     )
   }
 
   return (
-    <section className="border-t border-border bg-sand/30 py-[var(--space-section)]">
-      <div className="mx-auto max-w-2xl px-5 sm:px-8">
+    <section className="border-t border-border/60 bg-muted/30 py-24 sm:py-32">
+      <div className="mx-auto max-w-2xl px-6 sm:px-10">
         <Reveal className="text-center">
           <span className="text-sm font-medium text-primary">Hai să vorbim</span>
           <h2 className="mt-3 text-balance font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -75,15 +73,8 @@ export function LeadFormSection() {
           </p>
         </Reveal>
 
-        <Reveal delay={0.1} className="mt-10 border border-border bg-card p-6 shadow-[var(--shadow-sm)] sm:p-8">
-          {submitted ? (
-            <div className="flex min-h-72 flex-col items-center justify-center text-center" role="status">
-              <span className="flex size-12 items-center justify-center rounded-full bg-success/10 text-success"><CheckCircle2 className="size-6" /></span>
-              <h3 className="mt-5 font-heading text-2xl font-semibold">Solicitarea a fost trimisă</h3>
-              <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">Am înregistrat datele tale. Echipa BH Group te va contacta folosind informațiile furnizate.</p>
-              <Button type="button" variant="outline" className="mt-6" onClick={() => setSubmitted(false)}>Trimite o altă solicitare</Button>
-            </div>
-          ) : <Form {...form}>
+        <Reveal delay={0.1} className="mt-10 rounded-3xl border border-border/60 bg-card p-8 shadow-sm">
+          <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
               <HoneypotField name="website" value={honeypot} onChange={setHoneypot} />
               <div className="grid gap-4 sm:grid-cols-2">
@@ -176,7 +167,7 @@ export function LeadFormSection() {
                 {createLead.isPending ? "Se trimite..." : "Trimite datele"}
               </Button>
             </form>
-          </Form>}
+          </Form>
         </Reveal>
       </div>
     </section>

@@ -60,7 +60,7 @@ export function MfaSetupRequiredView() {
   }
 
   return (
-    <Card className="border-border bg-card shadow-[var(--shadow-md)]">
+    <Card className="border-white/15 bg-background/95 shadow-2xl backdrop-blur-md">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl">
           <ShieldAlert className="size-5 text-amber-500" />

@@ -5,20 +5,20 @@ import {
   ArrowRight,
   Building2,
   CalendarClock,
+  ShieldAlert,
+  ShieldCheck,
   UserPlus,
   Wallet,
 } from "lucide-react"
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { PageHeader } from "@/components/ui/page-header"
-import { StatCard } from "@/components/ui/stat-card"
-import { StatusBadge } from "@/components/ui/status-badge"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { useDashboardSummary } from "@/hooks/use-dashboard"
 import { ROLE_LABELS } from "@/lib/roles"
@@ -34,18 +34,78 @@ export function DashboardOverview() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
-      <PageHeader
-        eyebrow="Prezentare generală"
-        title={isLoading ? <Skeleton className="h-9 w-64" /> : `Bine ai venit, ${user?.firstName}!`}
-        description="Statistici și activitate recentă a platformei."
-        actions={!isLoading && user ? <><Badge variant="secondary" className="text-sm">{ROLE_LABELS[user.role]}</Badge>{user.mfaEnabled ? <StatusBadge tone="success" label="2FA activ" /> : <StatusBadge tone="warning" label="2FA inactiv" />}</> : undefined}
-      />
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {isLoading ? <Skeleton className="h-8 w-64" /> : `Bine ai venit, ${user?.firstName}!`}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Statistici și activitate recentă a platformei.
+          </p>
+        </div>
+        {!isLoading && user && (
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-sm">
+              {ROLE_LABELS[user.role]}
+            </Badge>
+            {user.mfaEnabled ? (
+              <span className="flex items-center gap-1 text-xs text-emerald-600">
+                <ShieldCheck className="size-3.5" /> 2FA activ
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-xs text-amber-600">
+                <ShieldAlert className="size-3.5" /> 2FA inactiv
+              </span>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={Wallet} tone="primary" label="Venit total" value={isSummaryLoading || !summary ? <Skeleton className="h-8 w-32" /> : formatCurrency(summary.totalRevenue, summary.currency)} />
-        <StatCard icon={CalendarClock} label="Rezervări" value={isSummaryLoading || !summary ? <Skeleton className="h-8 w-16" /> : summary.totalReservations} />
-        <StatCard icon={Building2} label="Proprietăți" value={isSummaryLoading || !summary ? <Skeleton className="h-8 w-16" /> : summary.totalProperties} />
-        <StatCard icon={UserPlus} tone={summary && summary.uncontactedLeads > 0 ? "warning" : "default"} label="Lead-uri noi" value={isSummaryLoading || !summary ? <Skeleton className="h-8 w-16" /> : summary.uncontactedLeads} />
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader>
+            <CardDescription className="flex items-center gap-1.5">
+              <Wallet className="size-3.5" /> Venit total
+            </CardDescription>
+            <CardTitle className="text-2xl">
+              {isSummaryLoading || !summary ? (
+                <Skeleton className="h-8 w-32" />
+              ) : (
+                formatCurrency(summary.totalRevenue, summary.currency)
+              )}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardDescription className="flex items-center gap-1.5">
+              <CalendarClock className="size-3.5" /> Rezervări
+            </CardDescription>
+            <CardTitle className="text-2xl">
+              {isSummaryLoading || !summary ? <Skeleton className="h-8 w-16" /> : summary.totalReservations}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardDescription className="flex items-center gap-1.5">
+              <Building2 className="size-3.5" /> Proprietăți
+            </CardDescription>
+            <CardTitle className="text-2xl">
+              {isSummaryLoading || !summary ? <Skeleton className="h-8 w-16" /> : summary.totalProperties}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card className={summary && summary.uncontactedLeads > 0 ? "border-amber-300/60 bg-amber-50 dark:bg-amber-950/20" : ""}>
+          <CardHeader>
+            <CardDescription className="flex items-center gap-1.5">
+              <UserPlus className="size-3.5" /> Lead-uri noi
+            </CardDescription>
+            <CardTitle className="text-2xl">
+              {isSummaryLoading || !summary ? <Skeleton className="h-8 w-16" /> : summary.uncontactedLeads}
+            </CardTitle>
+          </CardHeader>
+        </Card>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">

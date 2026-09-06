@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
-import { Building2, Download, Plus, Search } from "lucide-react"
+import { Download, Plus, Search } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
@@ -17,8 +17,6 @@ import {
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DataPagination } from "@/components/ui/data-pagination"
-import { EmptyState } from "@/components/ui/empty-state"
-import { PageHeader } from "@/components/ui/page-header"
 import { PropertyCard } from "@/components/properties/property-card"
 import { useProperties } from "@/hooks/use-properties"
 import { useCurrentUser } from "@/hooks/use-current-user"
@@ -59,9 +57,15 @@ export function PropertiesView() {
   }
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-6">
-      <PageHeader eyebrow="Portofoliu" title="Proprietăți" description="Administrează portofoliul de proprietăți." actions={
-        <div className="flex flex-wrap gap-2">
+    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Proprietăți</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Administrează portofoliul de proprietăți.
+          </p>
+        </div>
+        <div className="flex gap-2">
           <Button type="button" variant="outline" className="gap-2" onClick={handleExport}>
             <Download className="size-4" />
             Export CSV
@@ -73,10 +77,10 @@ export function PropertiesView() {
             </Link>
           )}
         </div>
-      } />
+      </div>
 
       <div className="flex flex-wrap gap-3">
-        <div className="relative min-w-0 flex-[1_1_16rem]">
+        <div className="relative min-w-64 flex-1">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Caută după nume sau oraș..."
@@ -95,7 +99,7 @@ export function PropertiesView() {
             setPage(0)
           }}
         >
-          <SelectTrigger className="w-full sm:w-44">
+          <SelectTrigger className="w-44">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -114,7 +118,7 @@ export function PropertiesView() {
             setPage(0)
           }}
         >
-          <SelectTrigger className="w-full sm:w-44">
+          <SelectTrigger className="w-44">
             <SelectValue placeholder="Tip" />
           </SelectTrigger>
           <SelectContent>
@@ -135,7 +139,9 @@ export function PropertiesView() {
           ))}
         </div>
       ) : !data || data.content.length === 0 ? (
-        <EmptyState icon={Building2} title="Nu au fost găsite proprietăți" description="Ajustează filtrele sau adaugă prima proprietate, dacă rolul tău permite acest lucru." />
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
+          <p className="text-sm text-muted-foreground">Nu au fost găsite proprietăți.</p>
+        </div>
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

@@ -4,7 +4,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   SUPER_ADMIN: "Super Admin",
   ADMINISTRATOR: "Administrator",
   OWNER: "Proprietar",
-  CLEANER: "Personal curățenie",
+  CLEANER: "Cleaner",
   MAINTENANCE: "Mentenanță",
   ACCOUNTANT: "Contabil",
   SUPPORT_AGENT: "Agent suport",

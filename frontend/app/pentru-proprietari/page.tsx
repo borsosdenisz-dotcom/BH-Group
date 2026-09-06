@@ -7,9 +7,8 @@ import { FaqSection } from "@/components/marketing/faq-section"
 import { LeadFormSection } from "@/components/marketing/lead-form-section"
 import { SiteFooter } from "@/components/marketing/site-footer"
 import { ChatWidget } from "@/components/marketing/chat-widget"
+import { SiteBackgroundVideo } from "@/components/marketing/site-background-video"
 import { PentruProprietariHero } from "@/components/marketing/pentru-proprietari-hero"
-import { OwnerPortalSection } from "@/components/marketing/owner-portal-section"
-import { MobileOwnerCta } from "@/components/marketing/mobile-owner-cta"
 
 export const metadata: Metadata = {
   title: "Listează-ți proprietatea",
@@ -20,6 +19,7 @@ export const metadata: Metadata = {
 export default function PentruProprietariPage() {
   return (
     <div className="flex flex-1 flex-col overflow-x-hidden">
+      <SiteBackgroundVideo />
       <SiteHeader />
 
       <PentruProprietariHero />
@@ -28,7 +28,6 @@ export default function PentruProprietariPage() {
         <ServicesSection />
       </div>
       <ProcessSection />
-      <OwnerPortalSection />
       <RevenueEstimateSection />
       <div id="faq">
         <FaqSection />
@@ -37,7 +36,6 @@ export default function PentruProprietariPage() {
         <LeadFormSection />
       </div>
       <SiteFooter />
-      <MobileOwnerCta />
       <ChatWidget />
     </div>
   )

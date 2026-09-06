@@ -31,10 +31,8 @@ export function DashboardTopbar() {
   const logout = useLogout()
 
   return (
-    <header className="sticky top-0 z-30 flex h-18 items-center justify-between border-b border-border/80 bg-background/95 px-4 shadow-[var(--shadow-xs)] backdrop-blur sm:px-6 xl:px-10">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/60 bg-background/80 px-6 backdrop-blur">
       <DashboardMobileNav />
-
-      <p className="hidden text-sm font-semibold text-muted-foreground md:block">Panou de administrare</p>
 
       <div className="ml-auto flex items-center gap-2">
         <NotificationBell
@@ -52,10 +50,10 @@ export function DashboardTopbar() {
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
-                <button className="flex size-11 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Deschide meniul contului" />
+                <button className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring" />
               }
             >
-              <Avatar className="size-10">
+              <Avatar className="size-9">
                 <AvatarFallback>
                   {initials(user.firstName, user.lastName)}
                 </AvatarFallback>

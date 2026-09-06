@@ -102,9 +102,9 @@ describe("PropertyBookingCard", () => {
       expect(screen.getByText("Perioada selectată nu este disponibilă.")).toBeInTheDocument()
     })
 
-    it("renders an enabled request-flow link to bookingHref when the quote is available", () => {
+    it("renders an enabled 'Rezervă' link to bookingHref when the quote is available", () => {
       renderCard({ checkIn: "2026-09-01", checkOut: "2026-09-05", quote: baseQuote })
-      const cta = screen.getByRole("link", { name: "Continuă către cerere" })
+      const cta = screen.getByRole("link", { name: "Rezervă" })
       expect(cta).toHaveAttribute("href", bookingHref)
     })
   })

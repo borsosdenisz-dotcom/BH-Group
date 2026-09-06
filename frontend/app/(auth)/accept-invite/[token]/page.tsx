@@ -58,7 +58,7 @@ export default function AcceptInvitePage({
 
   if (isLoading) {
     return (
-      <Card className="border-border bg-card shadow-[var(--shadow-md)]">
+      <Card className="border-white/15 bg-background/95 shadow-2xl backdrop-blur-md">
         <CardContent className="flex flex-col gap-4 pt-6">
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-10 w-full" />
@@ -70,7 +70,7 @@ export default function AcceptInvitePage({
 
   if (isError || !invite) {
     return (
-      <Card className="border-border bg-card shadow-[var(--shadow-md)]">
+      <Card className="border-white/15 bg-background/95 shadow-2xl backdrop-blur-md">
         <CardContent className="flex flex-col items-center gap-3 pt-6 text-center">
           <XCircle className="size-10 text-destructive" />
           <h1 className="text-xl font-semibold">Invitație invalidă</h1>
@@ -87,7 +87,7 @@ export default function AcceptInvitePage({
   }
 
   return (
-    <Card className="border-border bg-card shadow-[var(--shadow-md)]">
+    <Card className="border-white/15 bg-background/95 shadow-2xl backdrop-blur-md">
       <CardHeader>
         <CardTitle className="text-xl">Bine ai venit, {invite.firstName}!</CardTitle>
         <CardDescription>

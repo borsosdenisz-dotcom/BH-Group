@@ -26,7 +26,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { DataPagination } from "@/components/ui/data-pagination"
-import { PageHeader } from "@/components/ui/page-header"
 import { downloadFile } from "@/lib/download-file"
 import { useCreateExpense, useDeleteExpense, useExpenses, useUploadExpenseReceipt } from "@/hooks/use-expenses"
 import { useFinancialReport } from "@/hooks/use-financial-reports"
@@ -46,18 +45,23 @@ export function FinanceView() {
   const [to, setTo] = useState("")
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-8">
-      <PageHeader eyebrow="Raportare" title="Finanțe" description="Cheltuieli pe proprietăți și raport de profitabilitate." />
+    <div className="mx-auto flex max-w-6xl flex-col gap-8">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Finanțe</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Cheltuieli pe proprietăți și raport de profitabilitate.
+        </p>
+      </div>
 
       <div className="flex flex-wrap items-end gap-3">
         <PropertyFilterSelect value={propertyId} onChange={setPropertyId} />
         <div className="flex flex-col gap-1">
           <label className="text-xs text-muted-foreground">De la</label>
-          <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-full sm:w-40" />
+          <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" />
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-xs text-muted-foreground">Până la</label>
-          <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-full sm:w-40" />
+          <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" />
         </div>
       </div>
 
@@ -80,7 +84,7 @@ function PropertyFilterSelect({ value, onChange }: { value: string; onChange: (v
     <div className="flex flex-col gap-1">
       <label className="text-xs text-muted-foreground">Proprietate</label>
       <Select value={selected} onValueChange={(v) => onChange(v === "ALL" ? "" : (v ?? ""))}>
-        <SelectTrigger className="w-full sm:w-56">
+        <SelectTrigger className="w-56">
           <SelectValue>{() => label}</SelectValue>
         </SelectTrigger>
         <SelectContent>

@@ -73,8 +73,6 @@ import {
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DataPagination } from "@/components/ui/data-pagination"
-import { EmptyState } from "@/components/ui/empty-state"
-import { PageHeader } from "@/components/ui/page-header"
 import {
   useCreateUser,
   useDeleteUser,
@@ -676,8 +674,16 @@ export function UsersView() {
   const hasFilters = search.trim() !== "" || roleFilter !== "ALL" || statusFilter !== "ALL"
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-6">
-      <PageHeader eyebrow="Acces și roluri" title="Echipă" description="Administrează conturile colegilor care au acces în platformă." actions={isAdmin ? <CreateUserDialog actingRole={me?.role} /> : undefined} />
+    <div className="mx-auto flex max-w-5xl flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Echipă</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Administrează conturile colegilor care au acces în platformă.
+          </p>
+        </div>
+        {isAdmin && <CreateUserDialog actingRole={me?.role} />}
+      </div>
 
       {!isAdmin && (
         <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-sm text-amber-600 dark:text-amber-400">
@@ -687,7 +693,7 @@ export function UsersView() {
       )}
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-0 flex-[1_1_16rem]">
+        <div className="relative min-w-64 flex-1">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Caută după nume sau email..."
@@ -702,7 +708,7 @@ export function UsersView() {
             value={roleFilter}
             onValueChange={(v) => { setRoleFilter(v as Role | "ALL"); setPage(0) }}
           >
-            <SelectTrigger className="w-full sm:w-44">
+            <SelectTrigger className="w-44">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -721,7 +727,7 @@ export function UsersView() {
             value={statusFilter}
             onValueChange={(v) => { setStatusFilter(v as UserStatus | "ALL"); setPage(0) }}
           >
-            <SelectTrigger className="w-full sm:w-40">
+            <SelectTrigger className="w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -739,10 +745,17 @@ export function UsersView() {
       {isLoading ? (
         <UsersTableSkeleton />
       ) : !data || data.content.length === 0 ? (
-        <EmptyState icon={UsersIcon} title={hasFilters ? "Niciun cont nu corespunde filtrelor" : "Nu au fost găsiți utilizatori"} description={hasFilters ? "Ajustează căutarea, rolul sau statusul selectat." : "Conturile create în platformă vor apărea aici."} />
+        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-16 text-center">
+          <UsersIcon className="size-8 text-muted-foreground/50" />
+          <p className="text-sm text-muted-foreground">
+            {hasFilters
+              ? "Niciun cont nu corespunde filtrelor curente."
+              : "Nu au fost găsiți utilizatori."}
+          </p>
+        </div>
       ) : (
         <>
-          <div className="overflow-hidden border border-border bg-card">
+          <div className="rounded-lg border border-border/60">
             <Table>
               <TableHeader>
                 <TableRow>

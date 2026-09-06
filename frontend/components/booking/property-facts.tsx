@@ -21,10 +21,11 @@ export function PropertyFacts({ property }: PropertyFactsProps) {
   ]
 
   return (
-    <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-      {facts.map((fact) => (
-        <span key={fact.label} className="flex items-center">
-          <span className="flex min-h-10 items-center gap-1.5 border border-border bg-card px-3">
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-muted-foreground">
+      {facts.map((fact, index) => (
+        <span key={fact.label} className="flex items-center gap-2">
+          {index > 0 && <span className="text-border">·</span>}
+          <span className="flex items-center gap-1.5">
             <fact.icon className="size-4 shrink-0" />
             {fact.label}
           </span>
