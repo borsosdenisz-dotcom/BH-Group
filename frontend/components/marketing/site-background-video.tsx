@@ -9,8 +9,7 @@ interface SiteBackgroundVideoProps {
 }
 
 const DEFAULT_POSTER =
-  "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=2000&q=80&auto=format&fit=crop"
-const DEFAULT_SRC_MP4 = "/videos/home-hero.mp4"
+  "/images/hospitality-hero.jpg"
 
 /**
  * Site-wide fixed cinematic video background for public pages - one video,
@@ -30,7 +29,7 @@ const DEFAULT_SRC_MP4 = "/videos/home-hero.mp4"
  * page falls back to whatever it renders without this mounted.
  */
 export function SiteBackgroundVideo({
-  srcMp4 = DEFAULT_SRC_MP4,
+  srcMp4,
   poster = DEFAULT_POSTER,
 }: SiteBackgroundVideoProps) {
   const enabled = useCinematicBackgroundEnabled()
