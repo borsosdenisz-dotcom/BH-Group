@@ -57,8 +57,8 @@ export function HeroSection() {
             className="absolute inset-0"
           >
             <Image
-              src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=2000&q=80&auto=format&fit=crop"
-              alt="Apartament modern administrat de BH Group"
+              src="/videos/home-hero-poster.webp"
+              alt=""
               fill
               sizes="100vw"
               priority

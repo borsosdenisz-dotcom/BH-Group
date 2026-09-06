@@ -90,8 +90,9 @@ export function CinematicBackgroundVideo({
           muted
           loop
           playsInline
-          preload="auto"
+          preload="metadata"
           poster={poster}
+          aria-hidden="true"
           tabIndex={-1}
           className="absolute inset-0 h-full w-full object-cover"
         >

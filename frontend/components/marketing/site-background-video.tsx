@@ -5,12 +5,13 @@ import { useCinematicBackgroundEnabled } from "@/hooks/use-cinematic-background-
 
 interface SiteBackgroundVideoProps {
   srcMp4?: string
+  srcWebm?: string
   poster?: string
 }
 
-const DEFAULT_POSTER =
-  "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=2000&q=80&auto=format&fit=crop"
+const DEFAULT_POSTER = "/videos/home-hero-poster.webp"
 const DEFAULT_SRC_MP4 = "/videos/home-hero.mp4"
+const DEFAULT_SRC_WEBM = "/videos/home-hero.webm"
 
 /**
  * Site-wide fixed cinematic video background for public pages - one video,
@@ -31,6 +32,7 @@ const DEFAULT_SRC_MP4 = "/videos/home-hero.mp4"
  */
 export function SiteBackgroundVideo({
   srcMp4 = DEFAULT_SRC_MP4,
+  srcWebm = DEFAULT_SRC_WEBM,
   poster = DEFAULT_POSTER,
 }: SiteBackgroundVideoProps) {
   const enabled = useCinematicBackgroundEnabled()
@@ -39,6 +41,7 @@ export function SiteBackgroundVideo({
   return (
     <CinematicBackgroundVideo
       srcMp4={srcMp4}
+      srcWebm={srcWebm}
       poster={poster}
       posterClassName="kb-image-loop"
       className="fixed inset-0 -z-10"
