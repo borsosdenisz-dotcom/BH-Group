@@ -17,12 +17,12 @@ const FAQS = [
   {
     question: "Trebuie să semnez un contract pe termen lung?",
     answer:
-      "Nu. Colaborarea se poate încheia oricând, cu un preaviz rezonabil — nu te legăm printr-un contract rigid pe termen lung.",
+      "Durata, condițiile și eventualul preaviz se discută transparent înainte de începerea colaborării și sunt stabilite în documentele agreate de ambele părți.",
   },
   {
     question: "Pot să folosesc și eu proprietatea din când în când?",
     answer:
-      "Da. Ai acces prioritar la calendar oricând vrei să blochezi perioade pentru uz personal — anunți din timp și ne ocupăm de restul.",
+      "Spune-ne din timp perioadele în care vrei să folosești proprietatea, iar disponibilitatea și rezervările existente vor fi verificate împreună cu echipa.",
   },
   {
     question: "Pe ce platforme listați proprietatea?",
@@ -38,7 +38,7 @@ const FAQS = [
 
 export function FaqSection() {
   return (
-    <section className="mx-auto max-w-3xl px-6 py-24 sm:px-10 sm:py-32">
+    <section className="mx-auto max-w-4xl px-5 py-[var(--space-section)] sm:px-8 lg:px-10">
       <Reveal className="text-center">
         <span className="text-sm font-medium text-primary">Întrebări frecvente ale proprietarilor</span>
         <h2 className="mt-3 text-balance font-heading text-3xl font-semibold tracking-tight sm:text-4xl">

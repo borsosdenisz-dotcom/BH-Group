@@ -66,7 +66,7 @@ export function RevenueEstimateSection() {
   }
 
   return (
-    <section id="calculator" className="mx-auto max-w-6xl px-6 py-24 sm:px-10 sm:py-32">
+    <section id="calculator" className="mx-auto max-w-7xl px-5 py-[var(--space-section)] sm:px-8 lg:px-10">
       <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
         <Reveal>
           <span className="text-sm font-medium text-primary">Estimare de venit</span>
@@ -80,10 +80,10 @@ export function RevenueEstimateSection() {
         </Reveal>
 
         <Reveal delay={0.1}>
-          <div className="rounded-3xl border border-border/60 bg-card p-8 shadow-sm">
+          <div className="border border-border bg-card p-6 shadow-[var(--shadow-sm)] sm:p-8">
             {submitted ? (
               <div className="flex flex-col items-center gap-3 py-6 text-center">
-                <CheckCircle2 className="size-10 text-emerald-500" />
+                <CheckCircle2 className="size-10 text-success" />
                 <p className="font-medium">Mulțumim!</p>
                 <p className="text-sm text-muted-foreground">
                   Îți trimitem o estimare personalizată în cel mai scurt timp, pe adresa de email

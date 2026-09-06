@@ -80,7 +80,7 @@ export function LeadDialog({ trigger }: { trigger: ReactNode }) {
         <DialogHeader>
           <DialogTitle>Listează-ți proprietatea</DialogTitle>
           <DialogDescription>
-            Lasă-ne datele tale de contact — revenim cu o estimare de venit în cel mult 24h.
+            Lasă-ne datele tale de contact, iar echipa va reveni pentru a discuta proprietatea și serviciile potrivite.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

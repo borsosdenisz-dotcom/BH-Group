@@ -1,14 +1,14 @@
 "use client"
 
 import { motion, useReducedMotion } from "motion/react"
-import { CalendarCheck, ClipboardList, Handshake, Rocket } from "lucide-react"
+import { CalendarCheck, ClipboardList, Handshake, FileCheck2 } from "lucide-react"
 import { Reveal } from "@/components/marketing/reveal"
 
 const STEPS = [
   {
     icon: Handshake,
     title: "Discuție & evaluare",
-    description: "Analizăm proprietatea ta și îți prezentăm un venit estimativ, fără niciun angajament.",
+    description: "Discutăm despre proprietate, obiective și serviciile potrivite situației tale.",
   },
   {
     icon: ClipboardList,
@@ -21,21 +21,21 @@ const STEPS = [
     description: "Curățenie, check-in, comunicare cu oaspeții — coordonate prin sistem, din prima rezervare.",
   },
   {
-    icon: Rocket,
-    title: "Tu încasezi venitul",
-    description: "Primești deconturi periodice, cu raport detaliat al veniturilor și cheltuielilor.",
+    icon: FileCheck2,
+    title: "Urmărești activitatea",
+    description: "Consulți în portal informațiile disponibile despre rezervări, extrase și cheltuieli.",
   },
 ]
 
 export function ProcessSection() {
   const reduceMotion = useReducedMotion()
   return (
-    <section className="border-y border-border/60 bg-muted/30 py-24 sm:py-32">
-      <div className="mx-auto max-w-6xl px-6 sm:px-10">
+    <section className="border-y border-border bg-sand/35 py-[var(--space-section)]">
+      <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
         <Reveal className="max-w-2xl">
           <span className="text-sm font-medium text-primary">Cum funcționează</span>
           <h2 className="mt-3 text-balance font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
-            De la primul apel, la primul venit
+            De la discuția inițială la activitatea curentă
           </h2>
         </Reveal>
 
@@ -52,8 +52,8 @@ export function ProcessSection() {
 
           <div className="grid gap-10 sm:grid-cols-4">
             {STEPS.map((step, index) => (
-              <Reveal key={step.title} delay={index * 0.12} className="relative flex flex-col items-start">
-                <span className="relative z-10 flex size-12 items-center justify-center rounded-full border border-border bg-background text-primary shadow-sm">
+              <Reveal key={step.title} delay={index * 0.1} className="relative flex flex-col items-start">
+                <span className="relative z-10 flex size-12 items-center justify-center rounded-md border border-primary/20 bg-background text-primary shadow-[var(--shadow-xs)]">
                   <step.icon className="size-5" />
                 </span>
                 <h3 className="mt-5 font-medium">{step.title}</h3>
