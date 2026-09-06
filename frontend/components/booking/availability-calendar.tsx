@@ -170,8 +170,8 @@ export function AvailabilityCalendar({
                     booked && !isPast && isCurrentMonth && "bg-muted text-muted-foreground/70 line-through",
                     isCurrentMonth && !isPast && !booked && "hover:bg-accent",
                     selectingCheckout && isCurrentMonth && !isPast && !booked && !isValidCheckoutTarget && "text-muted-foreground/50",
-                    isInRange && "bg-primary/15 font-medium",
-                    (isCheckIn || isCheckOut) && "bg-primary font-semibold text-primary-foreground hover:bg-primary"
+                    isInRange && "bg-success/12 font-medium text-success",
+                    (isCheckIn || isCheckOut) && "bg-success font-semibold text-success-foreground hover:bg-success"
                   )}
                 >
                   {day.getDate()}
@@ -199,7 +199,6 @@ export function AvailabilityCalendar({
             type="button"
             size="icon"
             variant="outline"
-            className="size-8"
             disabled={!canGoBack}
             onClick={() => setAnchorMonth(new Date(anchorMonth.getFullYear(), anchorMonth.getMonth() - 1, 1))}
             aria-label="Luna anterioară"
@@ -210,7 +209,6 @@ export function AvailabilityCalendar({
             type="button"
             size="icon"
             variant="outline"
-            className="size-8"
             onClick={() => setAnchorMonth(new Date(anchorMonth.getFullYear(), anchorMonth.getMonth() + 1, 1))}
             aria-label="Luna următoare"
           >
@@ -241,7 +239,7 @@ export function AvailabilityCalendar({
           Indisponibil
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block size-2.5 rounded-sm bg-primary" />
+          <span className="inline-block size-2.5 rounded-sm bg-success" />
           Selecția ta
         </span>
         {(minStayNights || maxStayNights) && (

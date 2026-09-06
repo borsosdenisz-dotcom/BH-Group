@@ -41,7 +41,7 @@ export function MobileBookingBar({
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 px-4 py-3 backdrop-blur-sm lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/97 px-4 py-3 shadow-[0_-8px_24px_-18px_rgba(15,23,42,.45)] backdrop-blur-sm lg:hidden"
       style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
     >
       <div className="flex items-center justify-between gap-4">
@@ -71,7 +71,7 @@ export function MobileBookingBar({
 
         {ctaState === "available" ? (
           <Link href={bookingHref} className={cn(buttonVariants(), "shrink-0")}>
-            Rezervă
+            Continuă
           </Link>
         ) : (
           <Button disabled className="shrink-0">

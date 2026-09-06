@@ -186,7 +186,7 @@ export function BookingForm({
             {checkInDate && checkOutDate && !isCheckingAvailability && availability && (
               <div className="space-y-2 sm:col-span-2">
                 {availability.available ? (
-                  <p className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400">
+                  <p className="flex items-center gap-1.5 text-sm font-medium text-success">
                     <CheckCircle2 className="size-4" />
                     Disponibil — {stayNights} nopți
                   </p>
@@ -224,7 +224,7 @@ export function BookingForm({
                       </div>
                     )}
                     {!!quote.discountAmount && (
-                      <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+                      <div className="flex justify-between text-success">
                         <span>Discount ({quote.discountPercent}%)</span>
                         <span>
                           -{quote.discountAmount.toLocaleString("ro-RO")} {quote.currency}

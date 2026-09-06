@@ -29,7 +29,7 @@ export function PropertyGallery({ photos, propertyName }: PropertyGalleryProps) 
 
   if (photos.length === 0) {
     return (
-      <div className="flex aspect-[4/3] items-center justify-center rounded-2xl bg-muted text-muted-foreground sm:aspect-[16/9] lg:aspect-[2.2/1]">
+      <div className="flex aspect-[4/3] items-center justify-center bg-muted text-muted-foreground sm:aspect-[16/9] lg:aspect-[2.2/1]">
         <Building2 className="size-10" />
       </div>
     )
@@ -42,7 +42,7 @@ export function PropertyGallery({ photos, propertyName }: PropertyGalleryProps) 
     <div className="relative">
       <div
         className={cn(
-          "grid gap-2 overflow-hidden rounded-2xl",
+          "grid gap-2 overflow-hidden",
           thumbnails.length > 0 && "lg:h-[440px] lg:grid-cols-4 lg:grid-rows-2"
         )}
       >
@@ -92,7 +92,7 @@ export function PropertyGallery({ photos, propertyName }: PropertyGalleryProps) 
       <button
         type="button"
         onClick={() => setLightboxIndex(0)}
-        className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full border border-border/60 bg-background/90 px-3 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm transition-colors hover:bg-background sm:bottom-4 sm:right-4 sm:text-sm"
+        className="absolute bottom-3 right-3 flex min-h-11 items-center gap-1.5 rounded-md border border-border bg-background/95 px-3 text-xs font-semibold shadow-[var(--shadow-sm)] backdrop-blur-sm transition-colors hover:bg-background sm:bottom-4 sm:right-4 sm:text-sm"
       >
         <Images className="size-3.5 sm:size-4" />
         Vezi toate fotografiile

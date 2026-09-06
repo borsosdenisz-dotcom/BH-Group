@@ -81,7 +81,7 @@ function BookingInner({ id }: { id: string }) {
           <ArrowLeft className="size-3.5" />
           Înapoi la {property.name}
         </Link>
-        <h1 className="text-xl font-semibold tracking-tight">Rezervă — {property.name}</h1>
+        <h1 className="font-heading text-3xl font-semibold tracking-tight">Cerere de rezervare — {property.name}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Trimiți o cerere de rezervare — nu e o confirmare instant. Echipa noastră o confirmă
           manual și primești un email imediat ce e aprobată.

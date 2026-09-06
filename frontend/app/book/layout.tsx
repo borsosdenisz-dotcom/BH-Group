@@ -1,38 +1,22 @@
-"use client"
-
 import Link from "next/link"
-import { Building2 } from "lucide-react"
+import { BrandMark } from "@/components/marketing/brand-mark"
+import { SiteFooter } from "@/components/marketing/site-footer"
 import { ThemeToggle } from "@/components/layout/theme-toggle"
-import { SiteBackgroundVideo } from "@/components/marketing/site-background-video"
-import { useCinematicBackgroundEnabled } from "@/hooks/use-cinematic-background-enabled"
-import { cn } from "@/lib/utils"
 
-export default function BookLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const cinematicEnabled = useCinematicBackgroundEnabled()
-
+export default function BookLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={cn("flex min-h-screen flex-col", !cinematicEnabled && "bg-background")}>
-      {cinematicEnabled && <SiteBackgroundVideo />}
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/60 bg-background/80 px-6 backdrop-blur">
-        <Link href="/" className="flex items-center gap-2 font-heading font-semibold tracking-tight">
-          <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Building2 className="size-3.5" />
-          </span>
-          BH Group
-        </Link>
-        <ThemeToggle />
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="sticky top-0 z-40 border-b border-border/80 bg-background/95 shadow-[var(--shadow-xs)] backdrop-blur-md">
+        <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
+          <Link href="/" aria-label="BH Group — pagina principală"><BrandMark /></Link>
+          <div className="flex items-center gap-2">
+            <Link href="/pentru-proprietari" className="hidden min-h-11 items-center px-3 text-sm font-semibold text-muted-foreground hover:text-foreground sm:inline-flex">Pentru proprietari</Link>
+            <ThemeToggle />
+          </div>
+        </div>
       </header>
-      <main className="flex-1 px-6 py-8">{children}</main>
-      <footer className="flex items-center justify-center gap-4 px-6 py-6 text-center text-xs text-muted-foreground">
-        <span>© {new Date().getFullYear()} BH Group. Toate drepturile rezervate.</span>
-        <Link href="/login" className="text-muted-foreground/70 hover:text-foreground">
-          Acces echipă
-        </Link>
-      </footer>
+      <main className="flex-1 px-5 py-10 sm:px-8 sm:py-14 lg:px-10">{children}</main>
+      <SiteFooter />
     </div>
   )
 }
