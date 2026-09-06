@@ -67,7 +67,7 @@ describe("MobileBookingBar", () => {
     renderBar({ checkIn: "2026-09-01", checkOut: "2026-09-05", quote: baseQuote })
     expect(screen.getByText("1.200 RON")).toBeInTheDocument()
     expect(screen.getByText("4 nopți")).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: "Rezervă" })).toHaveAttribute("href", bookingHref)
+    expect(screen.getByRole("link", { name: "Continuă" })).toHaveAttribute("href", bookingHref)
   })
 
   it("shows 'de la X/noapte' when no dates are selected but a base price exists", () => {
@@ -106,7 +106,7 @@ describe("MobileBookingBar", () => {
 
   it("enables the CTA as a link only when the quote is available", () => {
     renderBar({ checkIn: "2026-09-01", checkOut: "2026-09-05", quote: baseQuote })
-    const cta = screen.getByRole("link", { name: "Rezervă" })
+    const cta = screen.getByRole("link", { name: "Continuă" })
     expect(cta).toHaveAttribute("href", bookingHref)
   })
 })
