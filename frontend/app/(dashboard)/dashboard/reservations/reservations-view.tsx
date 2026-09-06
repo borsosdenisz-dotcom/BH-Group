@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
-import { Download, Plus, Search } from "lucide-react"
+import { CalendarClock, Download, Plus, Search } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { downloadFile } from "@/lib/download-file"
@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DataPagination } from "@/components/ui/data-pagination"
+import { EmptyState } from "@/components/ui/empty-state"
+import { PageHeader } from "@/components/ui/page-header"
 import { useReservations } from "@/hooks/use-reservations"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import {
@@ -62,15 +64,9 @@ export function ReservationsView() {
   }
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Rezervări</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Administrează rezervările pentru toate proprietățile.
-          </p>
-        </div>
-        <div className="flex gap-2">
+    <div className="mx-auto flex max-w-7xl flex-col gap-6">
+      <PageHeader eyebrow="Operațiuni" title="Rezervări" description="Administrează rezervările pentru proprietățile vizibile rolului tău." actions={
+        <div className="flex flex-wrap gap-2">
           {isFullAdmin && (
             <Button type="button" variant="outline" className="gap-2" onClick={handleExport}>
               <Download className="size-4" />
@@ -84,10 +80,10 @@ export function ReservationsView() {
             </Link>
           )}
         </div>
-      </div>
+      } />
 
       <div className="flex flex-wrap gap-3">
-        <div className="relative min-w-64 flex-1">
+        <div className="relative min-w-0 flex-[1_1_16rem]">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Caută după numele oaspetelui..."
@@ -106,7 +102,7 @@ export function ReservationsView() {
             setPage(0)
           }}
         >
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -123,12 +119,10 @@ export function ReservationsView() {
       {isLoading ? (
         <Skeleton className="h-96 w-full" />
       ) : !data || data.content.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
-          <p className="text-sm text-muted-foreground">Nu au fost găsite rezervări.</p>
-        </div>
+        <EmptyState icon={CalendarClock} title="Nu au fost găsite rezervări" description="Încearcă alte criterii de căutare sau verifică din nou mai târziu." />
       ) : (
         <>
-          <div className="rounded-lg border border-border/60">
+          <div className="overflow-hidden border border-border bg-card">
             <Table>
               <TableHeader>
                 <TableRow>

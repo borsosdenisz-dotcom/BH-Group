@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Building2, Menu } from "lucide-react"
+import { Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { DASHBOARD_NAV_ITEMS } from "@/lib/dashboard-nav"
 import { useState } from "react"
+import { BrandMark } from "@/components/marketing/brand-mark"
 
 export function DashboardMobileNav() {
   const [open, setOpen] = useState(false)
@@ -27,17 +28,12 @@ export function DashboardMobileNav() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger render={<Button variant="ghost" size="icon" className="md:hidden" />}>
+      <SheetTrigger render={<Button variant="ghost" size="icon" className="md:hidden" aria-label="Deschide navigația" />}>
         <Menu className="size-5" />
       </SheetTrigger>
-      <SheetContent side="left" className="w-64 p-0">
-        <SheetHeader className="border-b border-border/60">
-          <SheetTitle className="flex items-center gap-2 font-semibold tracking-tight">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Building2 className="size-3.5" />
-            </span>
-            BH Group PMS
-          </SheetTitle>
+      <SheetContent side="left" className="w-[min(88vw,18rem)] bg-sidebar p-0 text-sidebar-foreground">
+        <SheetHeader className="border-b border-sidebar-border p-5">
+          <SheetTitle><BrandMark inverse /></SheetTitle>
         </SheetHeader>
         <nav className="flex flex-col gap-1 px-3 py-2">
           {visibleItems.map((item) => {
@@ -52,13 +48,13 @@ export function DashboardMobileNav() {
                 href={item.href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-muted text-foreground"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground/65 hover:bg-sidebar-accent/65 hover:text-sidebar-accent-foreground"
                 )}
               >
-                <Icon className="size-4" />
+                <Icon className={cn("size-4", isActive && "text-sidebar-primary")} />
                 {item.label}
               </Link>
             )

@@ -145,5 +145,5 @@ export const PROPERTY_STATUS_BADGE_VARIANT: Record<
   DRAFT: "outline",
   ACTIVE: "default",
   INACTIVE: "secondary",
-  MAINTENANCE: "destructive",
+  MAINTENANCE: "outline",
 }

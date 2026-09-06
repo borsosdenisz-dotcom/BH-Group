@@ -2,10 +2,10 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Building2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { DASHBOARD_NAV_ITEMS } from "@/lib/dashboard-nav"
+import { BrandMark } from "@/components/marketing/brand-mark"
 
 export function DashboardSidebar() {
   const pathname = usePathname()
@@ -16,14 +16,12 @@ export function DashboardSidebar() {
   )
 
   return (
-    <aside className="hidden w-60 shrink-0 border-r border-border/60 bg-background md:flex md:flex-col">
-      <div className="flex h-16 items-center gap-2 px-6 font-semibold tracking-tight">
-        <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <Building2 className="size-3.5" />
-        </span>
-        BH Group PMS
+    <aside className="sticky top-0 hidden h-screen w-68 shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex md:flex-col">
+      <div className="flex h-20 flex-col justify-center border-b border-sidebar-border px-6">
+        <BrandMark inverse />
+        <span className="mt-1 pl-[2.9rem] text-[10px] font-semibold uppercase tracking-[0.16em] text-sidebar-foreground/45">Administrare</span>
       </div>
-      <nav className="flex flex-1 flex-col gap-1 px-3 py-2">
+      <nav aria-label="Navigație dashboard" className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-5">
         {visibleItems.map((item) => {
           const isActive =
             item.href === "/dashboard"
@@ -35,13 +33,13 @@ export function DashboardSidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "relative flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:bg-sidebar-primary before:opacity-0",
                 isActive
-                  ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground before:opacity-100"
+                  : "text-sidebar-foreground/62 hover:bg-sidebar-accent/65 hover:text-sidebar-accent-foreground"
               )}
             >
-              <Icon className="size-4" />
+              <Icon className={cn("size-4", isActive && "text-sidebar-primary")} />
               {item.label}
             </Link>
           )
