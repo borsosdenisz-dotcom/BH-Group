@@ -1,8 +1,10 @@
 package com.bhgroup.pms.service;
 
+import com.bhgroup.pms.common.exception.BadRequestException;
 import com.bhgroup.pms.common.exception.ResourceNotFoundException;
 import com.bhgroup.pms.domain.Property;
 import com.bhgroup.pms.dto.messaging.MessageResponse;
+import com.bhgroup.pms.dto.payment.CheckoutSessionResponse;
 import com.bhgroup.pms.dto.property.PriceQuoteResponse;
 import com.bhgroup.pms.dto.publicapi.PublicBookingRequest;
 import com.bhgroup.pms.dto.publicapi.PublicBookingUpdateRequest;
@@ -12,6 +14,7 @@ import com.bhgroup.pms.dto.reservation.AvailabilityResponse;
 import com.bhgroup.pms.repository.PropertyRepository;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +31,12 @@ public class PublicReservationService {
     private final PricingService pricingService;
     private final PropertyRepository propertyRepository;
     private final MessageService messageService;
+    /**
+     * Absent when no Stripe key is configured: the site then offers manual
+     * payment (bank transfer / on arrival) only, and the checkout endpoint
+     * says so instead of failing obscurely.
+     */
+    private final Optional<StripeCheckoutService> stripeCheckoutService;
 
     @Transactional(readOnly = true)
     public AvailabilityResponse availability(UUID propertyId, LocalDate checkIn, LocalDate checkOut) {
@@ -55,6 +64,19 @@ public class PublicReservationService {
                 reservation.getManagementToken());
 
         return publicReservationMapper.toResponse(reservation);
+    }
+
+    /**
+     * Hands back the Stripe-hosted URL the guest is redirected to in order to
+     * pay by card. The amount is recomputed inside
+     * {@link StripeCheckoutService} - this path never accepts one.
+     */
+    @Transactional
+    public CheckoutSessionResponse createCheckoutSession(String token) {
+        return stripeCheckoutService
+                .orElseThrow(() -> new BadRequestException(
+                        "Plata cu cardul nu este disponibilă momentan. Te rugăm să alegi plata prin transfer bancar."))
+                .createCheckoutSession(token);
     }
 
     @Transactional(readOnly = true)

@@ -63,6 +63,30 @@ export function useCreatePublicBooking() {
   })
 }
 
+export function usePaymentConfig() {
+  return useQuery({
+    queryKey: ["public-payment-config"],
+    queryFn: () => publicApi.getPaymentConfig(),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+/**
+ * Starts a hosted Stripe Checkout session and sends the guest to Stripe's
+ * own page - the card form never renders on our domain.
+ */
+export function useStartCardCheckout() {
+  return useMutation({
+    mutationFn: (token: string) => publicApi.startCardCheckout(token),
+    onSuccess: (session) => {
+      window.location.href = session.checkoutUrl
+    },
+    onError: (error) => {
+      toast.error(errorMessage(error, "Plata cu cardul nu a putut fi inițiată"))
+    },
+  })
+}
+
 export function useBookingByToken(token: string) {
   return useQuery({
     queryKey: ["booking-manage", token],

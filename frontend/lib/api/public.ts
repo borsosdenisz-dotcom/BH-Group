@@ -2,10 +2,12 @@ import { apiClient } from "@/lib/api/client"
 import type {
   AvailabilityResponse,
   CancellationQuoteResponse,
+  CheckoutSessionResponse,
   Facility,
   LateCheckoutRequestResponse,
   MessageResponse,
   PageResponse,
+  PaymentConfigResponse,
   PriceQuoteResponse,
   PublicCalendarEntryResponse,
   PublicPropertyResponse,
@@ -99,6 +101,18 @@ export const publicApi = {
 
   createBooking: (payload: PublicBookingPayload) =>
     apiClient.post<PublicReservationResponse>("/public/reservations", payload, { skipAuth: true }),
+
+  getPaymentConfig: () =>
+    apiClient.get<PaymentConfigResponse>("/public/payments/config", { skipAuth: true }),
+
+  // Takes only the token: the amount is recomputed server-side, so there is
+  // deliberately nothing about the price to send from here.
+  startCardCheckout: (token: string) =>
+    apiClient.post<CheckoutSessionResponse>(
+      `/public/reservations/${token}/checkout`,
+      undefined,
+      { skipAuth: true }
+    ),
 
   getBookingByToken: (token: string) =>
     apiClient.get<PublicReservationResponse>(`/public/reservations/manage/${token}`, { skipAuth: true }),

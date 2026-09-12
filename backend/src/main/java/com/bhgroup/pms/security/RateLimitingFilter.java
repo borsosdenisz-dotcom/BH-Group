@@ -55,7 +55,15 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             // this covers the visitor's polling GET .../chat/{token}/messages.
             // No GET rule existed anywhere before this; polling is by design
             // far more frequent than a form submit, so the window is wider.
-            new RateLimitRule("GET", "/api/v1/assistant/chat/", 60, 5 * 60 * 1000L)
+            new RateLimitRule("GET", "/api/v1/assistant/chat/", 60, 5 * 60 * 1000L),
+            // Payment webhooks: public by necessity (the gateway calls it with
+            // no session of ours), so it needs a ceiling against flooding - but
+            // a generous one. All of Stripe's deliveries share one source IP and
+            // therefore one bucket, and throttling a real "payment succeeded"
+            // event would leave a paid booking unconfirmed. Well above any
+            // realistic delivery rate here; a throttled delivery is retried by
+            // Stripe anyway, and unsigned payloads are rejected regardless.
+            new RateLimitRule("POST", "/api/v1/public/payments/webhook", 120, 60 * 1000L)
     );
 
     private final Map<String, Window> windows = new ConcurrentHashMap<>();
