@@ -19,6 +19,7 @@ public class AppProperties {
     private Storage storage = new Storage();
     private Contact contact = new Contact();
     private Assistant assistant = new Assistant();
+    private Stripe stripe = new Stripe();
 
     @Getter
     @Setter
@@ -76,5 +77,20 @@ public class AppProperties {
         private int maxHistoryMessages;
         private long timeoutMs;
         private int retentionDays;
+    }
+
+    /**
+     * Stripe hosted Checkout. Card data never touches this server - the
+     * payment form lives on Stripe's own domain, and we only ever see the
+     * session/payment-intent ids that come back. Leaving {@code secretKey}
+     * empty disables card payments entirely (no STRIPE gateway bean is
+     * registered), and the site falls back to manual payment only.
+     */
+    @Getter
+    @Setter
+    public static class Stripe {
+        private String secretKey;
+        private String publishableKey;
+        private String webhookSecret;
     }
 }

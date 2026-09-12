@@ -109,3 +109,8 @@ app:
     max-history-messages: ${ANTHROPIC_MAX_HISTORY_MESSAGES:16}
     timeout-ms: ${ANTHROPIC_TIMEOUT_MS:15000}
     retention-days: ${ASSISTANT_CHAT_RETENTION_DAYS:90}
+  stripe:
+    # Empty by default: no keys, no STRIPE gateway bean, card payments off.
+    secret-key: ${STRIPE_SECRET_KEY:}
+    publishable-key: ${STRIPE_PUBLISHABLE_KEY:}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:}

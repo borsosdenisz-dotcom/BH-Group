@@ -5,6 +5,7 @@ import com.bhgroup.pms.dto.latecheckout.LateCheckoutRequestCreateRequest;
 import com.bhgroup.pms.dto.latecheckout.LateCheckoutRequestResponse;
 import com.bhgroup.pms.dto.messaging.MessageCreateRequest;
 import com.bhgroup.pms.dto.messaging.MessageResponse;
+import com.bhgroup.pms.dto.payment.CheckoutSessionResponse;
 import com.bhgroup.pms.dto.property.PriceQuoteResponse;
 import com.bhgroup.pms.dto.reservation.CancellationQuoteResponse;
 import com.bhgroup.pms.dto.publicapi.PublicBookingRequest;
@@ -69,6 +70,18 @@ public class PublicReservationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
                 publicReservationService.createBooking(request),
                 "Cererea de rezervare a fost trimisă. Verifică emailul pentru detalii."));
+    }
+
+    /**
+     * Opens a hosted Stripe Checkout session for a booking still on hold. The
+     * token is the only input - the amount is recomputed server-side, so
+     * there is nothing here a caller could tamper with. Returns 400 if card
+     * payments are not configured, leaving manual payment as the only option.
+     */
+    @PostMapping("/{token}/checkout")
+    @Operation(summary = "Start a card payment for a held booking (hosted Stripe Checkout)")
+    public ResponseEntity<ApiResponse<CheckoutSessionResponse>> checkout(@PathVariable String token) {
+        return ResponseEntity.ok(ApiResponse.success(publicReservationService.createCheckoutSession(token)));
     }
 
     @GetMapping("/manage/{token}")

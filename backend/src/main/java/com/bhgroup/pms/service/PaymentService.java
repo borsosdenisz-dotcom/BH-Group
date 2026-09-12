@@ -3,6 +3,7 @@ package com.bhgroup.pms.service;
 import com.bhgroup.pms.common.exception.BadRequestException;
 import com.bhgroup.pms.common.exception.ResourceNotFoundException;
 import com.bhgroup.pms.domain.Payment;
+import com.bhgroup.pms.domain.PaymentMethod;
 import com.bhgroup.pms.domain.PaymentProvider;
 import com.bhgroup.pms.domain.PaymentStatus;
 import com.bhgroup.pms.domain.PaymentTransaction;
@@ -31,6 +32,7 @@ import java.time.Instant;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -147,6 +149,67 @@ public class PaymentService {
         applyChargeResult(payment, result);
 
         return toResponse(payment);
+    }
+
+    /**
+     * Creates - or reuses - the PENDING card payment that a hosted Checkout
+     * session is opened against. Reusing keeps a retried checkout (double
+     * click, expired session, guest returning later) from piling up payment
+     * rows for one booking. {@code amount} is always the server-recomputed
+     * quote; nothing here ever takes an amount from a client.
+     */
+    @Transactional
+    public Payment startOnlineCardPayment(Reservation reservation, BigDecimal amount, String currency) {
+        return findReusableCardPayment(reservation.getId())
+                .map(existing -> {
+                    existing.setAmount(amount);
+                    existing.setCurrency(currency);
+                    return paymentRepository.save(existing);
+                })
+                .orElseGet(() -> paymentRepository.save(Payment.builder()
+                        .reservation(reservation)
+                        .provider(PaymentProvider.STRIPE)
+                        .method(PaymentMethod.ONLINE_CARD)
+                        .status(PaymentStatus.PENDING)
+                        .amount(amount)
+                        .currency(currency)
+                        .build()));
+    }
+
+    /** The in-flight card payment a Stripe webhook for this reservation refers to. */
+    @Transactional(readOnly = true)
+    public Optional<Payment> findReusableCardPayment(UUID reservationId) {
+        return paymentRepository.findByReservationIdOrderByCreatedAtDesc(reservationId).stream()
+                .filter(p -> p.getProvider() == PaymentProvider.STRIPE)
+                .filter(p -> p.getStatus() == PaymentStatus.PENDING || p.getStatus() == PaymentStatus.PROCESSING)
+                .findFirst();
+    }
+
+    /**
+     * Applies a captured card payment: stores the provider reference (the
+     * PaymentIntent id, which refunds later need), moves the payment to
+     * SUCCEEDED, writes the CHARGE transaction, and confirms the reservation
+     * once it is fully paid. Already-SUCCEEDED payments are left alone, so a
+     * re-delivered webhook cannot capture or confirm twice.
+     */
+    @Transactional
+    public Payment markCardPaymentSucceeded(Payment payment, String providerPaymentId) {
+        if (payment.getStatus() == PaymentStatus.SUCCEEDED) {
+            log.info("Payment {} is already SUCCEEDED - ignoring duplicate capture", payment.getId());
+            return payment;
+        }
+        applyChargeResult(payment, PaymentGatewayResult.succeeded(providerPaymentId, null));
+        return payment;
+    }
+
+    /** Records a declined card payment. The reservation stays on hold until it expires. */
+    @Transactional
+    public Payment markCardPaymentFailed(Payment payment, String failureReason) {
+        if (payment.getStatus() == PaymentStatus.SUCCEEDED) {
+            return payment;
+        }
+        applyChargeResult(payment, PaymentGatewayResult.failed(payment.getProviderPaymentId(), null, failureReason));
+        return payment;
     }
 
     @Transactional

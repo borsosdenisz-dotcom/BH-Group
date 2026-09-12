@@ -24,6 +24,7 @@
         <jjwt.version>0.12.7</jjwt.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <springdoc.version>2.9.0</springdoc.version>
+        <stripe.version>33.4.2</stripe.version>
         <!-- Spring Boot 3.5.16 still manages 3.17.0, which is affected by
              CVE-2025-48924 (uncontrolled recursion DoS); pin to the fixed
              release until the parent BOM catches up. -->
@@ -119,6 +120,14 @@
             <groupId>net.sf.biweekly</groupId>
             <artifactId>biweekly</artifactId>
             <version>0.6.8</version>
+        </dependency>
+
+        <!-- Stripe (hosted Checkout + webhook signature verification). Card data
+             never reaches this server: Checkout is hosted on Stripe's domain. -->
+        <dependency>
+            <groupId>com.stripe</groupId>
+            <artifactId>stripe-java</artifactId>
+            <version>${stripe.version}</version>
         </dependency>
 
         <!-- MapStruct -->

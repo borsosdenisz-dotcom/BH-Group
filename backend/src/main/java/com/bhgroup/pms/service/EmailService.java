@@ -59,6 +59,22 @@ public class EmailService {
         send(toEmail, "Cererea ta de rezervare - " + appProperties.getName(), "email/booking-confirmation-email", context);
     }
 
+    public void sendPaymentConfirmedEmail(String toEmail, String firstName, String propertyName,
+                                           String checkInDate, String checkOutDate, String amount,
+                                           String currency, String managementToken) {
+        Context context = new Context();
+        context.setVariable("appName", appProperties.getName());
+        context.setVariable("firstName", firstName);
+        context.setVariable("propertyName", propertyName);
+        context.setVariable("checkInDate", checkInDate);
+        context.setVariable("checkOutDate", checkOutDate);
+        context.setVariable("amount", amount);
+        context.setVariable("currency", currency);
+        context.setVariable("manageUrl", appProperties.getBaseUrl() + "/manage-booking/" + managementToken);
+
+        send(toEmail, "Rezervare confirmată - " + appProperties.getName(), "email/payment-confirmed-email", context);
+    }
+
     public void sendCheckinInstructionsEmail(String toEmail, String firstName, String propertyName,
                                               String checkInDate, String checkInTime, String address,
                                               String accessCode, String managementToken) {

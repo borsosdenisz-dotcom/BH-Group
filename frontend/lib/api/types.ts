@@ -496,6 +496,19 @@ export interface CancellationQuoteResponse {
   currency: string
 }
 
+/** Which payment options the public booking site may offer. */
+export interface PaymentConfigResponse {
+  cardPaymentsEnabled: boolean
+  publishableKey: string | null
+}
+
+/** Where to send the guest to pay, plus the backend-computed amount. */
+export interface CheckoutSessionResponse {
+  checkoutUrl: string
+  amount: number
+  currency: string
+}
+
 export type LateCheckoutStatus = "REQUESTED" | "APPROVED" | "REJECTED" | "PAID"
 
 export interface LateCheckoutRequestResponse {
