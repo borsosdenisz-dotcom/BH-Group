@@ -1,0 +1,46 @@
+{
+	# TCP 443 is sufficient for HTTP/1.1 and HTTP/2. HTTP/3 is intentionally
+	# disabled so production publishes exactly the documented TCP ports.
+	servers {
+		protocols h1 h2
+	}
+}
+
+bhstays.ro {
+	encode zstd gzip
+
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "SAMEORIGIN"
+		Strict-Transport-Security "max-age=31536000"
+	}
+
+	route {
+		@private path /actuator* /v3/api-docs* /swagger-ui*
+		respond @private 404
+
+		@backend path /api/* /uploads/*
+		reverse_proxy @backend backend:8080 {
+			# Caddy rebuilds X-Forwarded-* from its direct peer by default and
+			# ignores client-supplied values. Strip alternate client-IP headers.
+			# Keep Cloudflare DNS-only until trusted proxy handling is verified.
+			header_up -Forwarded
+			header_up -X-Real-IP
+			header_up -CF-Connecting-IP
+			header_up -True-Client-IP
+		}
+
+		reverse_proxy frontend:3000 {
+			header_up -Forwarded
+			header_up -X-Real-IP
+			header_up -CF-Connecting-IP
+			header_up -True-Client-IP
+		}
+	}
+}
+
+www.bhstays.ro {
+	redir https://bhstays.ro{uri} permanent
+}

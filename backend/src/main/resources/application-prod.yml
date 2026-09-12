@@ -1,11 +1,29 @@
 spring:
   jpa:
     show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+server:
+  forward-headers-strategy: framework
+  error:
+    include-message: never
+    include-binding-errors: never
 
 logging:
   level:
     root: WARN
     com.bhgroup.pms: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN
+
+management:
+  health:
+    # SMTP is optional; an intentionally empty SMTP configuration must not
+    # make the application/database liveness check report DOWN.
+    mail:
+      enabled: false
 
 springdoc:
   swagger-ui:
