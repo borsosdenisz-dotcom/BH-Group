@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { screen, renderWithProviders, userEvent, waitFor } from "@/test/utils"
+import { act, screen, renderWithProviders, userEvent, waitFor } from "@/test/utils"
 import { ChatWidget } from "./chat-widget"
 import { assistantApi } from "@/lib/api/assistant"
 
@@ -31,17 +31,26 @@ describe("ChatWidget", () => {
   })
 
   it("shows the assistant's reply and sends only the real conversation (not the canned greeting)", async () => {
-    vi.mocked(assistantApi.chat).mockResolvedValue({ message: "Check-in-ul variază pe proprietate.", needsHuman: false })
+    // The test resolves the request itself, so the reply can't race the
+    // assertions and a slow runner only has to render, not also fetch.
+    let resolveChat!: (reply: Awaited<ReturnType<typeof assistantApi.chat>>) => void
+    vi.mocked(assistantApi.chat).mockImplementation(
+      () => new Promise((resolve) => { resolveChat = resolve })
+    )
 
     await openWidgetAndAsk("Care e ora de check-in?")
 
-    await waitFor(() => {
-      expect(screen.getByText("Check-in-ul variază pe proprietate.")).toBeInTheDocument()
-    })
-
+    await waitFor(() => expect(assistantApi.chat).toHaveBeenCalledTimes(1))
     expect(assistantApi.chat).toHaveBeenCalledWith([
       { role: "user", content: "Care e ora de check-in?" },
     ])
+    expect(screen.queryByText("Check-in-ul variază pe proprietate.")).not.toBeInTheDocument()
+
+    await act(async () => {
+      resolveChat({ message: "Check-in-ul variază pe proprietate.", needsHuman: false })
+    })
+
+    expect(await screen.findByText("Check-in-ul variază pe proprietate.")).toBeInTheDocument()
   })
 
   it("shows a contact fallback message when the request fails", async () => {

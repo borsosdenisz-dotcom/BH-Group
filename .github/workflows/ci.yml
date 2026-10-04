@@ -64,6 +64,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Report-only for now: surfaces known vulnerabilities in the log without
+      # failing the build on ones that already exist.
+      - name: Dependency audit (non-blocking)
+        continue-on-error: true
+        run: npm audit --audit-level=high
+
       - name: Type-check
         run: npx tsc --noEmit
 
@@ -77,3 +83,18 @@ jobs:
         env:
           NEXT_PUBLIC_API_BASE_URL: http://localhost:8080/api/v1
         run: npm run build
+
+  dependency-review:
+    name: Dependency review (non-blocking)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # Flags vulnerable dependencies a PR introduces in backend/pom.xml and
+      # frontend/package-lock.json. Warn-only until the existing backlog is cleared.
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          warn-only: true

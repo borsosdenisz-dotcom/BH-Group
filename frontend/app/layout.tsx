@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     template: "%s | BH Stays",
   },
   description:
-    "Administrare premium de proprietăți pentru închirieri pe termen scurt — Airbnb, Booking.com și rezervări directe.",
+    "Administrare premium de proprietăți pentru închirieri pe termen scurt, pe mai multe canale de rezervare.",
   openGraph: {
     siteName: "BH Stays",
     locale: "ro_RO",
