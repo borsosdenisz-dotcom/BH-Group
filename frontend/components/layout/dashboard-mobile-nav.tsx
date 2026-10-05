@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Building2, Menu } from "lucide-react"
+import { ArrowLeft, Building2, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -27,16 +27,41 @@ export function DashboardMobileNav() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger render={<Button variant="ghost" size="icon" className="md:hidden" />}>
+      <SheetTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            aria-label="Deschide meniul"
+          />
+        }
+      >
         <Menu className="size-5" />
       </SheetTrigger>
       <SheetContent side="left" className="w-64 p-0">
         <SheetHeader className="border-b border-border/60">
-          <SheetTitle className="flex items-center gap-2 font-semibold tracking-tight">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Building2 className="size-3.5" />
-            </span>
-            BH Stays
+          <SheetTitle className="flex items-center gap-1">
+            <Link
+              href="/"
+              aria-label="Înapoi la portalul clienților"
+              title="Portal clienți"
+              onClick={() => setOpen(false)}
+              className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <ArrowLeft className="size-4" />
+            </Link>
+            <Link
+              href="/dashboard"
+              aria-label="Meniul principal BH Stays"
+              onClick={() => setOpen(false)}
+              className="flex min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 font-semibold tracking-tight transition-colors hover:bg-muted"
+            >
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <Building2 className="size-3.5" />
+              </span>
+              <span>BH Stays</span>
+            </Link>
           </SheetTitle>
         </SheetHeader>
         <nav className="flex flex-col gap-1 px-3 py-2">
