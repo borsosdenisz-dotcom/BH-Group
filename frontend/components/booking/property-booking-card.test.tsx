@@ -106,6 +106,20 @@ describe("PropertyBookingCard", () => {
       renderCard({ checkIn: "2026-09-01", checkOut: "2026-09-05", quote: baseQuote })
       const cta = screen.getByRole("link", { name: "Rezervă" })
       expect(cta).toHaveAttribute("href", bookingHref)
+      expect(screen.getByText(/Plătești online cu cardul/)).toBeInTheDocument()
+      expect(screen.queryByText(/confirmă manual/)).not.toBeInTheDocument()
+    })
+
+    it("disables booking and shows the contact details when online card payment is unavailable", () => {
+      renderCard({
+        checkIn: "2026-09-01",
+        checkOut: "2026-09-05",
+        quote: baseQuote,
+        onlineBookingAvailable: false,
+      })
+      expect(screen.getByRole("button", { name: "Rezervare online indisponibilă" })).toBeDisabled()
+      expect(screen.queryByRole("link", { name: "Rezervă" })).not.toBeInTheDocument()
+      expect(screen.getByText("Rezervarea online nu este momentan disponibilă.")).toBeInTheDocument()
     })
   })
 

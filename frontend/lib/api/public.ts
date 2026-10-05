@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/api/client"
 import type {
   AvailabilityResponse,
+  PublicBookingCheckoutResponse,
   CancellationQuoteResponse,
   CheckoutSessionResponse,
   Facility,
@@ -39,6 +40,12 @@ export interface PublicBookingPayload {
   numberOfGuests: number
   notes?: string
   idempotencyKey?: string
+  /**
+   * Public booking is card-only. The type admits nothing else, and the
+   * backend rejects any other value anyway - manual payment methods exist
+   * only in the authenticated admin flows.
+   */
+  paymentMethod: "ONLINE_CARD"
 }
 
 export interface PublicBookingUpdatePayload {
@@ -99,8 +106,10 @@ export const publicApi = {
       { skipAuth: true }
     ),
 
+  // Holds the dates and opens Stripe Checkout in one step; the response
+  // carries the URL to send the guest to.
   createBooking: (payload: PublicBookingPayload) =>
-    apiClient.post<PublicReservationResponse>("/public/reservations", payload, { skipAuth: true }),
+    apiClient.post<PublicBookingCheckoutResponse>("/public/reservations", payload, { skipAuth: true }),
 
   getPaymentConfig: () =>
     apiClient.get<PaymentConfigResponse>("/public/payments/config", { skipAuth: true }),

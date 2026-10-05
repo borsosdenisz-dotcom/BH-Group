@@ -54,6 +54,8 @@ class ReservationServiceTest {
     private CancellationRefundCalculator cancellationRefundCalculator;
     @Mock
     private PaymentService paymentService;
+    @Mock
+    private AuditService auditService;
 
     private ReservationService reservationService;
     private Property property;
@@ -62,7 +64,8 @@ class ReservationServiceTest {
     void setUp() {
         reservationService = new ReservationService(
                 reservationRepository, propertyRepository, secureTokenGenerator, new ReservationMapper(),
-                emailService, pricingService, cleaningTaskService, cancellationRefundCalculator, paymentService);
+                emailService, pricingService, cleaningTaskService, cancellationRefundCalculator, paymentService,
+                auditService);
 
         property = Property.builder()
                 .name("Test Apartment")

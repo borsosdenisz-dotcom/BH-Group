@@ -8,8 +8,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -78,6 +80,19 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID>,
 
     Optional<Reservation> findByManagementToken(String managementToken);
 
+    /**
+     * Row-locked reads for the paths that move a held booking forward or
+     * release it - opening a checkout session, the Stripe webhook, and the
+     * hold-expiry job - so they serialise instead of overwriting each other.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select r from Reservation r where r.id = :id")
+    Optional<Reservation> findByIdForUpdate(@Param("id") UUID id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select r from Reservation r where r.managementToken = :token")
+    Optional<Reservation> findByManagementTokenForUpdate(@Param("token") String managementToken);
+
     Optional<Reservation> findByIdempotencyKey(String idempotencyKey);
 
     Optional<Reservation> findByExternalUid(String externalUid);
@@ -93,6 +108,12 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID>,
     List<Reservation> findActiveForExport(@Param("propertyId") UUID propertyId,
                                            @Param("excludedStatuses") Collection<ReservationStatus> excludedStatuses);
 
+    /**
+     * Locked so the expiry job cannot cancel a hold a webhook is confirming
+     * at the same instant: Postgres re-checks the status after the lock is
+     * granted, so a row the webhook just confirmed drops out of the result.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             select r from Reservation r
             where r.status = :status

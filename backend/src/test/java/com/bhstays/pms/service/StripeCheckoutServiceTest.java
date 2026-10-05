@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -101,7 +103,7 @@ class StripeCheckoutServiceTest {
         reservation.setTotalAmount(new BigDecimal("1.00"));
         BigDecimal quotedTotal = new BigDecimal("500.00");
 
-        when(reservationService.getByManagementToken(TOKEN)).thenReturn(reservation);
+        when(reservationService.lockByManagementToken(TOKEN)).thenReturn(reservation);
         when(pricingService.quote(eq(reservation.getProperty()), any(), any(), anyInt()))
                 .thenReturn(quoteOf(quotedTotal, "RON"));
         when(paymentService.startOnlineCardPayment(any(), any(), any()))
@@ -126,7 +128,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     void createCheckoutSession_passesTheReservationIdAsMetadataAndBothRedirectUrls() {
-        when(reservationService.getByManagementToken(TOKEN)).thenReturn(reservation);
+        when(reservationService.lockByManagementToken(TOKEN)).thenReturn(reservation);
         when(pricingService.quote(any(), any(), any(), anyInt()))
                 .thenReturn(quoteOf(new BigDecimal("500.00"), "RON"));
         when(paymentService.startOnlineCardPayment(any(), any(), any()))
@@ -148,7 +150,7 @@ class StripeCheckoutServiceTest {
     @Test
     void createCheckoutSession_rejectsAnAlreadyConfirmedBooking() {
         reservation.setStatus(ReservationStatus.CONFIRMED);
-        when(reservationService.getByManagementToken(TOKEN)).thenReturn(reservation);
+        when(reservationService.lockByManagementToken(TOKEN)).thenReturn(reservation);
 
         assertThatThrownBy(() -> stripeCheckoutService.createCheckoutSession(TOKEN))
                 .isInstanceOf(BadRequestException.class);
@@ -159,7 +161,7 @@ class StripeCheckoutServiceTest {
     @Test
     void createCheckoutSession_rejectsABookingWhoseHoldHasExpired() {
         reservation.setHoldExpiresAt(Instant.now().minus(1, ChronoUnit.MINUTES));
-        when(reservationService.getByManagementToken(TOKEN)).thenReturn(reservation);
+        when(reservationService.lockByManagementToken(TOKEN)).thenReturn(reservation);
 
         assertThatThrownBy(() -> stripeCheckoutService.createCheckoutSession(TOKEN))
                 .isInstanceOf(BadRequestException.class);
@@ -169,10 +171,87 @@ class StripeCheckoutServiceTest {
 
     @Test
     void createCheckoutSession_rejectsWhenTheQuoteCannotBePriced() {
-        when(reservationService.getByManagementToken(TOKEN)).thenReturn(reservation);
+        when(reservationService.lockByManagementToken(TOKEN)).thenReturn(reservation);
         when(pricingService.quote(any(), any(), any(), anyInt())).thenReturn(new PriceQuoteResponse(
                 false, "No price configured", reservation.getCheckInDate(), reservation.getCheckOutDate(),
                 4, null, null, null, null, null, null, "RON", null, null));
+
+        assertThatThrownBy(() -> stripeCheckoutService.createCheckoutSession(TOKEN))
+                .isInstanceOf(BadRequestException.class);
+
+        verify(stripeGateway, never()).createCheckoutSession(any());
+    }
+
+    @Test
+    void createCheckoutSession_handsBackTheOpenSession_onARepeatedClick_withoutOpeningASecondOne() {
+        Payment open = cardPaymentOf(new BigDecimal("500.00"), "RON");
+        open.setCheckoutSessionId("cs_open");
+        open.setCheckoutUrl("https://checkout.stripe.com/cs_open");
+        open.setCheckoutExpiresAt(Instant.now().plus(20, ChronoUnit.MINUTES));
+
+        when(reservationService.lockByManagementToken(TOKEN)).thenReturn(reservation);
+        when(pricingService.quote(any(), any(), any(), anyInt()))
+                .thenReturn(quoteOf(new BigDecimal("500.00"), "RON"));
+        when(paymentService.findOpenCardCheckout(eq(reservation.getId()), any())).thenReturn(Optional.of(open));
+
+        var response = stripeCheckoutService.createCheckoutSession(TOKEN);
+
+        assertThat(response.checkoutUrl()).isEqualTo("https://checkout.stripe.com/cs_open");
+        verify(stripeGateway, never()).createCheckoutSession(any());
+        verify(paymentService, never()).startOnlineCardPayment(any(), any(), any());
+    }
+
+    @Test
+    void createCheckoutSession_expiresAnAlmostLapsedSessionBeforeOpeningAReplacement() {
+        Payment lapsing = cardPaymentOf(new BigDecimal("500.00"), "RON");
+        lapsing.setCheckoutSessionId("cs_lapsing");
+        lapsing.setCheckoutUrl("https://checkout.stripe.com/cs_lapsing");
+        lapsing.setCheckoutExpiresAt(Instant.now().plus(1, ChronoUnit.MINUTES));
+
+        when(reservationService.lockByManagementToken(TOKEN)).thenReturn(reservation);
+        when(pricingService.quote(any(), any(), any(), anyInt()))
+                .thenReturn(quoteOf(new BigDecimal("500.00"), "RON"));
+        when(paymentService.findOpenCardCheckout(eq(reservation.getId()), any())).thenReturn(Optional.of(lapsing));
+        when(paymentService.startOnlineCardPayment(any(), any(), any())).thenReturn(lapsing);
+        when(stripeGateway.createCheckoutSession(any()))
+                .thenReturn(new StripeGateway.StripeCheckoutSession("cs_new", "https://checkout.stripe.com/cs_new"));
+
+        var response = stripeCheckoutService.createCheckoutSession(TOKEN);
+
+        verify(stripeGateway, times(1)).expireCheckoutSession("cs_lapsing");
+        assertThat(response.checkoutUrl()).isEqualTo("https://checkout.stripe.com/cs_new");
+        assertThat(lapsing.getCheckoutSessionId()).isEqualTo("cs_new");
+    }
+
+    @Test
+    void createCheckoutSession_keepsTheHoldInStepWithTheSessionExpiry() {
+        Payment payment = cardPaymentOf(new BigDecimal("500.00"), "RON");
+        when(reservationService.lockByManagementToken(TOKEN)).thenReturn(reservation);
+        when(pricingService.quote(any(), any(), any(), anyInt()))
+                .thenReturn(quoteOf(new BigDecimal("500.00"), "RON"));
+        when(paymentService.startOnlineCardPayment(any(), any(), any())).thenReturn(payment);
+        when(stripeGateway.createCheckoutSession(any()))
+                .thenReturn(new StripeGateway.StripeCheckoutSession("cs_test_1", "https://checkout.stripe.com/cs_test_1"));
+
+        stripeCheckoutService.createCheckoutSession(TOKEN);
+
+        ArgumentCaptor<StripeGateway.CheckoutSessionRequest> captor =
+                ArgumentCaptor.forClass(StripeGateway.CheckoutSessionRequest.class);
+        verify(stripeGateway).createCheckoutSession(captor.capture());
+        Instant sessionExpiry = Instant.ofEpochSecond(captor.getValue().expiresAt());
+
+        assertThat(payment.getCheckoutSessionId()).isEqualTo("cs_test_1");
+        assertThat(payment.getCheckoutExpiresAt()).isEqualTo(sessionExpiry);
+        assertThat(reservation.getHoldExpiresAt())
+                .isEqualTo(sessionExpiry.plus(StripeCheckoutService.HOLD_GRACE_AFTER_SESSION));
+    }
+
+    @Test
+    void createCheckoutSession_refusesToExtendAHoldBeyondTheMaximum() {
+        reservation.setCreatedAt(Instant.now().minus(StripeCheckoutService.MAX_HOLD).plus(10, ChronoUnit.MINUTES));
+        when(reservationService.lockByManagementToken(TOKEN)).thenReturn(reservation);
+        when(pricingService.quote(any(), any(), any(), anyInt()))
+                .thenReturn(quoteOf(new BigDecimal("500.00"), "RON"));
 
         assertThatThrownBy(() -> stripeCheckoutService.createCheckoutSession(TOKEN))
                 .isInstanceOf(BadRequestException.class);

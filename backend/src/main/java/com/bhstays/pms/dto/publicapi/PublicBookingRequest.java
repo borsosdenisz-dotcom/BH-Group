@@ -39,6 +39,18 @@ public record PublicBookingRequest(
 
         String notes,
 
-        String idempotencyKey
+        String idempotencyKey,
+
+        /*
+         * Public bookings are paid online by card - the only accepted value
+         * is ONLINE_CARD (or omitting it). Anything else, e.g. BANK_TRANSFER
+         * or ON_ARRIVAL, is rejected server-side; manual payment methods
+         * exist only in the authenticated admin flows. Kept as a plain
+         * string so an unknown value gets the same clear 400 as a known
+         * manual one instead of a deserialization error.
+         */
+        String paymentMethod
 ) {
+
+    public static final String ONLINE_CARD = "ONLINE_CARD";
 }

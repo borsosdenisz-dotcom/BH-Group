@@ -8,6 +8,7 @@ import com.bhstays.pms.dto.messaging.MessageResponse;
 import com.bhstays.pms.dto.payment.CheckoutSessionResponse;
 import com.bhstays.pms.dto.property.PriceQuoteResponse;
 import com.bhstays.pms.dto.reservation.CancellationQuoteResponse;
+import com.bhstays.pms.dto.publicapi.PublicBookingCheckoutResponse;
 import com.bhstays.pms.dto.publicapi.PublicBookingRequest;
 import com.bhstays.pms.dto.publicapi.PublicBookingUpdateRequest;
 import com.bhstays.pms.dto.publicapi.PublicReservationResponse;
@@ -63,20 +64,26 @@ public class PublicReservationController {
                 publicReservationService.quote(propertyId, checkIn, checkOut, guests)));
     }
 
+    /**
+     * Card-only: holds the dates and returns the Stripe Checkout URL to send
+     * the guest to. 503 when online booking is unavailable (no Stripe, or
+     * Stripe could not open the session - nothing is held then); 400 for
+     * any payment method other than ONLINE_CARD.
+     */
     @PostMapping
-    @Operation(summary = "Create a booking request")
-    public ResponseEntity<ApiResponse<PublicReservationResponse>> create(
+    @Operation(summary = "Hold a booking and open its card payment (hosted Stripe Checkout)")
+    public ResponseEntity<ApiResponse<PublicBookingCheckoutResponse>> create(
             @Valid @RequestBody PublicBookingRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
                 publicReservationService.createBooking(request),
-                "Cererea de rezervare a fost trimisă. Verifică emailul pentru detalii."));
+                "Perioada este reținută. Finalizează plata cu cardul pentru confirmare."));
     }
 
     /**
      * Opens a hosted Stripe Checkout session for a booking still on hold. The
      * token is the only input - the amount is recomputed server-side, so
-     * there is nothing here a caller could tamper with. Returns 400 if card
-     * payments are not configured, leaving manual payment as the only option.
+     * there is nothing here a caller could tamper with. Returns 503 when
+     * online payment is unavailable.
      */
     @PostMapping("/{token}/checkout")
     @Operation(summary = "Start a card payment for a held booking (hosted Stripe Checkout)")

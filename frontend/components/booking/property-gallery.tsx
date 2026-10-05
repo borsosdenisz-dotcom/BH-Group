@@ -49,6 +49,7 @@ export function PropertyGallery({ photos, propertyName }: PropertyGalleryProps) 
         <button
           type="button"
           onClick={() => setLightboxIndex(0)}
+          aria-haspopup="dialog"
           aria-label={`Deschide galeria foto — ${propertyName}, fotografia 1 din ${photos.length}`}
           className={cn(
             "group relative block aspect-[4/3] w-full overflow-hidden sm:aspect-[16/9] lg:aspect-auto lg:h-full",
@@ -71,6 +72,7 @@ export function PropertyGallery({ photos, propertyName }: PropertyGalleryProps) 
             key={photo.id}
             type="button"
             onClick={() => setLightboxIndex(index + 1)}
+            aria-haspopup="dialog"
             aria-label={`Deschide galeria foto — ${propertyName}, fotografia ${index + 2} din ${photos.length}`}
             className={cn(
               "group relative hidden overflow-hidden lg:block",
@@ -92,6 +94,8 @@ export function PropertyGallery({ photos, propertyName }: PropertyGalleryProps) 
       <button
         type="button"
         onClick={() => setLightboxIndex(0)}
+        aria-haspopup="dialog"
+        aria-label={`Vezi toate fotografiile pentru ${propertyName}: ${photos.length}`}
         className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full border border-border/60 bg-background/90 px-3 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm transition-colors hover:bg-background sm:bottom-4 sm:right-4 sm:text-sm"
       >
         <Images className="size-3.5 sm:size-4" />

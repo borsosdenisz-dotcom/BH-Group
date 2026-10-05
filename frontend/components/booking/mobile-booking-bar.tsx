@@ -17,6 +17,8 @@ interface MobileBookingBarProps {
   quote: PriceQuoteResponse | undefined
   isQuoteLoading: boolean
   bookingHref: string
+  /** False when online card payment is unavailable - public booking is card-only. */
+  onlineBookingAvailable?: boolean
 }
 
 export function MobileBookingBar({
@@ -26,6 +28,7 @@ export function MobileBookingBar({
   quote,
   isQuoteLoading,
   bookingHref,
+  onlineBookingAvailable = true,
 }: MobileBookingBarProps) {
   const hasDates = !!checkIn && !!checkOut
 
@@ -69,7 +72,11 @@ export function MobileBookingBar({
           )}
         </div>
 
-        {ctaState === "available" ? (
+        {!onlineBookingAvailable ? (
+          <Button disabled className="shrink-0">
+            Rezervare online indisponibilă
+          </Button>
+        ) : ctaState === "available" ? (
           <Link href={bookingHref} className={cn(buttonVariants(), "shrink-0")}>
             Rezervă
           </Link>

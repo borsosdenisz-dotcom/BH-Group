@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
@@ -33,6 +34,14 @@ import org.springframework.test.web.servlet.MockMvc;
  * so this exercises the actual HTTP endpoints end-to-end against a real
  * Postgres-backed Spring context, not just the service layer in isolation.
  */
+// Public booking is card-only and refused outright without Stripe, so a
+// (dummy) Stripe configuration is needed to reach the guest-count check.
+// The request fails validation before any call to Stripe is made.
+@TestPropertySource(properties = {
+        "app.stripe.secret-key=sk_test_integration_dummy",
+        "app.stripe.publishable-key=pk_test_integration_dummy",
+        "app.stripe.webhook-secret=whsec_integration_test_secret"
+})
 @AutoConfigureMockMvc
 class PublicBookingGuestCountIntegrationTest extends AbstractIntegrationTest {
 

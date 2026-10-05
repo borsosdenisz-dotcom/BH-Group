@@ -35,6 +35,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
@@ -355,7 +356,7 @@ public class PricingRecommendationService {
 
         String text;
         try {
-            text = callModel(apiKey, dataJson);
+            text = callModel(apiKey, dataJson, propertyId);
         } catch (Exception ex) {
             log.error("Pricing AI provider call failed for property {}: {}", propertyId,
                     ex.getClass().getSimpleName());
@@ -366,8 +367,8 @@ public class PricingRecommendationService {
     }
 
     /** Package-private seam used by tests; production uses the configured Anthropic client. */
-    String callModel(String apiKey, String dataJson) {
-        AnthropicResponse response = pricingAiRestClient.post()
+    String callModel(String apiKey, String dataJson, UUID propertyId) {
+        ResponseEntity<AnthropicResponse> entity = pricingAiRestClient.post()
                 .uri("/v1/messages")
                 .header("x-api-key", apiKey)
                 .body(new AnthropicRequest(
@@ -376,11 +377,56 @@ public class PricingRecommendationService {
                         SYSTEM_PROMPT,
                         List.of(new AnthropicMessage("user", dataJson))))
                 .retrieve()
-                .body(AnthropicResponse.class);
+                .toEntity(AnthropicResponse.class);
 
-        return response == null || response.content() == null || response.content().isEmpty()
-                ? null
-                : response.content().get(0).text();
+        String requestId = firstNonBlank(
+                entity.getHeaders().getFirst("request-id"),
+                entity.getHeaders().getFirst("x-request-id"));
+        return extractFirstTextBlock(entity.getBody(), requestId, propertyId);
+    }
+
+    /**
+     * Anthropic responses can contain non-text blocks (for example thinking or
+     * tool_use) before the JSON answer. Only an explicitly typed, non-blank
+     * text block is eligible for the strict recommendation parser.
+     */
+    String extractFirstTextBlock(AnthropicResponse response, String requestId, UUID propertyId) {
+        List<AnthropicContentBlock> blocks = response == null || response.content() == null
+                ? List.of()
+                : response.content();
+
+        for (AnthropicContentBlock block : blocks) {
+            if (block != null && "text".equals(block.type())
+                    && block.text() != null && !block.text().isBlank()) {
+                return block.text();
+            }
+        }
+
+        List<String> blockTypes = blocks.stream()
+                .map(block -> block == null ? "null" : safeMetadata(block.type()))
+                .toList();
+        log.warn("Pricing AI response has no non-blank text block for property {}: "
+                        + "blockCount={}, blockTypes={}, stopReason={}, requestId={}",
+                propertyId, blocks.size(), blockTypes,
+                safeMetadata(response == null ? null : response.stopReason()),
+                safeMetadata(requestId));
+        return null;
+    }
+
+    private String firstNonBlank(String first, String second) {
+        if (first != null && !first.isBlank()) {
+            return first;
+        }
+        return second != null && !second.isBlank() ? second : null;
+    }
+
+    /** Keeps provider-controlled metadata single-line, bounded and non-sensitive. */
+    private String safeMetadata(String value) {
+        if (value == null || value.isBlank()) {
+            return "absent";
+        }
+        String sanitized = value.replaceAll("[^A-Za-z0-9._:-]", "?");
+        return sanitized.length() <= 80 ? sanitized : sanitized.substring(0, 80);
     }
 
     private RawPricingRecommendation parseStrictResponse(String text, UUID propertyId) {
@@ -643,6 +689,9 @@ public class PricingRecommendationService {
     record AnthropicContentBlock(String type, String text) {
     }
 
-    record AnthropicResponse(List<AnthropicContentBlock> content) {
+    record AnthropicResponse(
+            String id,
+            @JsonProperty("stop_reason") String stopReason,
+            List<AnthropicContentBlock> content) {
     }
 }

@@ -3,6 +3,7 @@ package com.bhstays.pms.service;
 import com.bhstays.pms.common.exception.BadRequestException;
 import com.bhstays.pms.common.exception.ResourceNotFoundException;
 import com.bhstays.pms.common.response.PageResponse;
+import com.bhstays.pms.domain.AuditAction;
 import com.bhstays.pms.domain.Property;
 import com.bhstays.pms.repository.PropertyRepository;
 import com.bhstays.pms.domain.PropertyStatus;
@@ -65,6 +66,7 @@ public class ReservationService {
     private final CleaningTaskService cleaningTaskService;
     private final CancellationRefundCalculator cancellationRefundCalculator;
     private final PaymentService paymentService;
+    private final AuditService auditService;
 
     // PaymentService also depends on ReservationService (to confirm a
     // reservation once it's fully paid), so this side of the cycle must be
@@ -75,7 +77,7 @@ public class ReservationService {
                                EmailService emailService, PricingService pricingService,
                                CleaningTaskService cleaningTaskService,
                                CancellationRefundCalculator cancellationRefundCalculator,
-                               @Lazy PaymentService paymentService) {
+                               @Lazy PaymentService paymentService, AuditService auditService) {
         this.reservationRepository = reservationRepository;
         this.propertyRepository = propertyRepository;
         this.secureTokenGenerator = secureTokenGenerator;
@@ -85,6 +87,7 @@ public class ReservationService {
         this.cleaningTaskService = cleaningTaskService;
         this.cancellationRefundCalculator = cancellationRefundCalculator;
         this.paymentService = paymentService;
+        this.auditService = auditService;
     }
 
     @Transactional(readOnly = true)
@@ -363,17 +366,42 @@ public class ReservationService {
 
     /**
      * Cancels PENDING guest bookings whose hold has expired without payment,
-     * freeing the calendar for other guests.
+     * freeing the calendar for other guests. Any card payment still waiting
+     * on Stripe is closed with it; should Stripe still report it paid later,
+     * the webhook refunds it instead of confirming over the released dates.
      */
     @Transactional
     public void expireStaleHolds() {
         List<Reservation> expired =
                 reservationRepository.findExpiredHolds(ReservationStatus.PENDING, Instant.now());
         for (Reservation reservation : expired) {
-            reservation.setStatus(ReservationStatus.CANCELLED);
-            reservationRepository.save(reservation);
+            releaseHold(reservation, "Perioada de reținere a expirat fără o plată confirmată");
             log.info("Expired unpaid booking hold for reservation {}", reservation.getId());
         }
+    }
+
+    /**
+     * Releases an unpaid hold: the reservation is cancelled (so the GiST
+     * no-overlap constraint stops counting it) and its open card payments
+     * are closed. The caller must hold the reservation's row lock.
+     */
+    @Transactional
+    public void releaseHold(Reservation reservation, String reason) {
+        reservation.setStatus(ReservationStatus.CANCELLED);
+        reservationRepository.save(reservation);
+        paymentService.cancelOpenCardPayments(reservation.getId());
+        auditService.recordSystemEvent(AuditAction.BOOKING_HOLD_RELEASED, "Reservation", reservation.getId(), reason);
+    }
+
+    /**
+     * The reservation behind a management token, row-locked for the rest of
+     * the transaction - so two "pay" clicks for one booking cannot both open
+     * a Checkout session, and neither can race the webhook or expiry job.
+     */
+    @Transactional
+    public Reservation lockByManagementToken(String token) {
+        return reservationRepository.findByManagementTokenForUpdate(token)
+                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found"));
     }
 
     @Transactional(readOnly = true)
@@ -405,6 +433,14 @@ public class ReservationService {
         if (reservation.getStatus() == ReservationStatus.CHECKED_OUT
                 || reservation.getStatus() == ReservationStatus.CANCELLED) {
             throw new BadRequestException("Cannot modify a reservation that is already checked out or cancelled");
+        }
+        // A Checkout session charges the price of the dates it was opened for;
+        // changing them underneath it would let the guest pay one total and
+        // be confirmed for another.
+        if (reservation.getStatus() == ReservationStatus.PENDING
+                && paymentService.findOpenCardCheckout(reservation.getId(), Instant.now()).isPresent()) {
+            throw new BadRequestException(
+                    "Plata cu cardul este în curs. Finalizează plata sau așteaptă expirarea ei înainte de a modifica rezervarea.");
         }
 
         validateDates(checkInDate, checkOutDate);

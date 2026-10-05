@@ -18,6 +18,8 @@ function PaymentCancelledInner() {
   const token = useSearchParams().get("token") ?? ""
   const { data: reservation, isLoading } = useBookingByToken(token)
   const startCheckout = useStartCardCheckout()
+  // Disabled from the first click until the browser has left for Stripe.
+  const checkoutBusy = startCheckout.isPending || startCheckout.isSuccess
 
   const stillPayable = reservation?.status === "PENDING"
 
@@ -30,8 +32,8 @@ function PaymentCancelledInner() {
         <Skeleton className="h-5 w-72" />
       ) : stillPayable ? (
         <p className="text-sm text-muted-foreground">
-          Nu ți-am debitat nimic. Ținem perioada rezervată încă puțin — poți relua plata acum, sau
-          ne poți scrie din pagina rezervării dacă preferi transferul bancar.
+          Nu ți-am debitat nimic. Ținem perioada rezervată încă puțin — poți relua plata cu cardul
+          acum. Rezervarea se confirmă automat imediat ce plata este confirmată.
         </p>
       ) : (
         <p className="text-sm text-muted-foreground">
@@ -41,9 +43,9 @@ function PaymentCancelledInner() {
       )}
 
       {stillPayable && token && (
-        <Button className="w-full" size="lg" disabled={startCheckout.isPending} onClick={() => startCheckout.mutate(token)}>
+        <Button className="w-full" size="lg" disabled={checkoutBusy} onClick={() => startCheckout.mutate(token)}>
           <CreditCard className="size-4" />
-          {startCheckout.isPending ? "Se deschide plata..." : "Reia plata cu cardul"}
+          {checkoutBusy ? "Se deschide plata..." : "Reia plata cu cardul"}
         </Button>
       )}
 

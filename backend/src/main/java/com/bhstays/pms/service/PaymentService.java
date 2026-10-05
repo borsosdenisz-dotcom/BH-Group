@@ -48,6 +48,10 @@ public class PaymentService {
     private static final Set<PaymentStatus> NET_PAID_STATUSES = Set.of(
             PaymentStatus.SUCCEEDED, PaymentStatus.PARTIALLY_REFUNDED);
 
+    /** A card payment in one of these states has not been captured and may still be paid or abandoned. */
+    private static final Set<PaymentStatus> OPEN_CARD_STATUSES = Set.of(
+            PaymentStatus.PENDING, PaymentStatus.PROCESSING, PaymentStatus.FAILED);
+
     private final PaymentRepository paymentRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final RefundRepository refundRepository;
@@ -176,7 +180,7 @@ public class PaymentService {
                         .build()));
     }
 
-    /** The in-flight card payment a Stripe webhook for this reservation refers to. */
+    /** The most recent card payment still waiting on Stripe (no session yet, or a session in flight). */
     @Transactional(readOnly = true)
     public Optional<Payment> findReusableCardPayment(UUID reservationId) {
         return paymentRepository.findByReservationIdOrderByCreatedAtDesc(reservationId).stream()
@@ -186,30 +190,80 @@ public class PaymentService {
     }
 
     /**
-     * Applies a captured card payment: stores the provider reference (the
-     * PaymentIntent id, which refunds later need), moves the payment to
-     * SUCCEEDED, writes the CHARGE transaction, and confirms the reservation
-     * once it is fully paid. Already-SUCCEEDED payments are left alone, so a
-     * re-delivered webhook cannot capture or confirm twice.
+     * The card payment whose hosted Checkout session the guest can still pay
+     * on right now. A declined card leaves the session open (Stripe lets the
+     * guest try another card on the same page), so FAILED counts as open too
+     * until the session itself expires.
+     */
+    @Transactional(readOnly = true)
+    public Optional<Payment> findOpenCardCheckout(UUID reservationId, Instant now) {
+        return paymentRepository.findByReservationIdOrderByCreatedAtDesc(reservationId).stream()
+                .filter(p -> p.getProvider() == PaymentProvider.STRIPE)
+                .filter(p -> OPEN_CARD_STATUSES.contains(p.getStatus()))
+                .filter(p -> p.getCheckoutSessionId() != null
+                        && p.getCheckoutExpiresAt() != null
+                        && p.getCheckoutExpiresAt().isAfter(now))
+                .findFirst();
+    }
+
+    /** The latest card payment for a booking - what the guest-facing status page reports on. */
+    @Transactional(readOnly = true)
+    public Optional<Payment> findLatestCardPayment(UUID reservationId) {
+        return paymentRepository.findByReservationIdOrderByCreatedAtDesc(reservationId).stream()
+                .filter(p -> p.getProvider() == PaymentProvider.STRIPE)
+                .findFirst();
+    }
+
+    /**
+     * Records a card payment Stripe has confirmed as captured: stores the
+     * PaymentIntent id (refunds are issued against it), moves the payment to
+     * SUCCEEDED and writes the CHARGE ledger entry.
+     *
+     * <p>Unlike {@link #recordManualPayment} this deliberately does not touch
+     * the reservation - the caller (the verified Stripe webhook) decides,
+     * under a row lock, whether the booking is confirmed or the money goes
+     * back, and raises the guest/admin notices exactly once.
      */
     @Transactional
-    public Payment markCardPaymentSucceeded(Payment payment, String providerPaymentId) {
-        if (payment.getStatus() == PaymentStatus.SUCCEEDED) {
-            log.info("Payment {} is already SUCCEEDED - ignoring duplicate capture", payment.getId());
-            return payment;
+    public Payment recordCardCapture(Payment payment, String paymentIntentId) {
+        payment.setStatus(PaymentStatus.SUCCEEDED);
+        if (paymentIntentId != null && !paymentIntentId.isBlank()) {
+            payment.setProviderPaymentId(paymentIntentId);
         }
-        applyChargeResult(payment, PaymentGatewayResult.succeeded(providerPaymentId));
+        paymentRepository.save(payment);
+        paymentTransactionRepository.save(PaymentTransaction.builder()
+                .payment(payment)
+                .type(PaymentTransactionType.CHARGE)
+                .status(PaymentTransactionStatus.SUCCEEDED)
+                .amount(payment.getAmount())
+                .providerTransactionId(paymentIntentId)
+                .build());
         return payment;
     }
 
-    /** Records a declined card payment. The reservation stays on hold until it expires. */
+    /**
+     * Records a declined card attempt. The booking stays on hold: the guest
+     * may still pay with another card on the same Checkout page until the
+     * session (and with it the hold) expires.
+     */
     @Transactional
     public Payment markCardPaymentFailed(Payment payment, String failureReason) {
-        if (payment.getStatus() == PaymentStatus.SUCCEEDED) {
+        if (!OPEN_CARD_STATUSES.contains(payment.getStatus())) {
             return payment;
         }
         applyChargeResult(payment, PaymentGatewayResult.failed(payment.getProviderPaymentId(), failureReason));
         return payment;
+    }
+
+    /** Closes card payments whose session can no longer be paid - an expired session or a released hold. */
+    @Transactional
+    public void cancelOpenCardPayments(UUID reservationId) {
+        for (Payment payment : paymentRepository.findByReservationIdOrderByCreatedAtDesc(reservationId)) {
+            if (payment.getProvider() == PaymentProvider.STRIPE && OPEN_CARD_STATUSES.contains(payment.getStatus())) {
+                payment.setStatus(PaymentStatus.CANCELLED);
+                paymentRepository.save(payment);
+            }
+        }
     }
 
     @Transactional

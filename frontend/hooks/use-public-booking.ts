@@ -9,6 +9,8 @@ import {
   type PublicPropertySearchParams,
 } from "@/lib/api/public"
 import { ApiError } from "@/lib/api/types"
+import { bookingPaymentOutcome, isFinalOutcome } from "@/lib/booking-payment-state"
+import { redirectToExternal } from "@/lib/redirect"
 
 function errorMessage(error: unknown, fallback: string) {
   if (error instanceof ApiError) return error.message
@@ -73,13 +75,16 @@ export function usePaymentConfig() {
 
 /**
  * Starts a hosted Stripe Checkout session and sends the guest to Stripe's
- * own page - the card form never renders on our domain.
+ * own page - the card form never renders on our domain. Callers should keep
+ * their button disabled while `isPending || isSuccess`: after success the
+ * page is already navigating away. The backend also hands a repeated
+ * request the same open session, so a second click can never open another.
  */
 export function useStartCardCheckout() {
   return useMutation({
     mutationFn: (token: string) => publicApi.startCardCheckout(token),
     onSuccess: (session) => {
-      window.location.href = session.checkoutUrl
+      redirectToExternal(session.checkoutUrl)
     },
     onError: (error) => {
       toast.error(errorMessage(error, "Plata cu cardul nu a putut fi inițiată"))
@@ -93,6 +98,27 @@ export function useBookingByToken(token: string) {
     queryFn: () => publicApi.getBookingByToken(token),
     enabled: !!token,
     retry: false,
+  })
+}
+
+const PAYMENT_POLL_INTERVAL_MS = 3000
+
+/**
+ * The booking as the backend sees it after the guest returns from Stripe,
+ * re-read every few seconds until the outcome is final (confirmed by the
+ * webhook, expired, or refunded). Read-only: polling never confirms anything.
+ */
+export function useBookingPaymentStatus(token: string) {
+  return useQuery({
+    queryKey: ["booking-manage", token],
+    queryFn: () => publicApi.getBookingByToken(token),
+    enabled: !!token,
+    retry: false,
+    refetchInterval: (query) => {
+      const reservation = query.state.data
+      if (!reservation) return query.state.error ? false : PAYMENT_POLL_INTERVAL_MS
+      return isFinalOutcome(bookingPaymentOutcome(reservation)) ? false : PAYMENT_POLL_INTERVAL_MS
+    },
   })
 }
 

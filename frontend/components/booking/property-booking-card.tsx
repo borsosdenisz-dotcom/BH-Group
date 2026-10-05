@@ -6,6 +6,7 @@ import { Calendar, Minus, Plus } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { OnlineBookingUnavailable } from "@/components/booking/online-booking-unavailable"
 import { parseLocalDate } from "@/lib/date"
 import { cn } from "@/lib/utils"
 import type { PriceQuoteResponse, PublicPropertyResponse } from "@/lib/api/types"
@@ -28,6 +29,8 @@ interface PropertyBookingCardProps {
   bookingHref: string
   onGuestsChange: (guests: number) => void
   onScrollToCalendar: () => void
+  /** False when online card payment is unavailable - public booking is card-only, so booking is disabled. */
+  onlineBookingAvailable?: boolean
   className?: string
 }
 
@@ -41,6 +44,7 @@ export function PropertyBookingCard({
   bookingHref,
   onGuestsChange,
   onScrollToCalendar,
+  onlineBookingAvailable = true,
   className,
 }: PropertyBookingCardProps) {
   const reduceMotion = useReducedMotion()
@@ -207,7 +211,14 @@ export function PropertyBookingCard({
           )}
         </AnimatePresence>
 
-        {ctaState === "available" ? (
+        {!onlineBookingAvailable ? (
+          <>
+            <Button size="lg" disabled className="w-full">
+              Rezervare online indisponibilă
+            </Button>
+            <OnlineBookingUnavailable />
+          </>
+        ) : ctaState === "available" ? (
           <Link href={bookingHref} className={cn(buttonVariants({ size: "lg" }), "w-full")}>
             Rezervă
           </Link>
@@ -221,9 +232,11 @@ export function PropertyBookingCard({
           </Button>
         )}
 
-        <p className="text-center text-xs text-muted-foreground">
-          Trimiți o cerere de rezervare — echipa o confirmă manual, nu e o rezervare instantă.
-        </p>
+        {onlineBookingAvailable && (
+          <p className="text-center text-xs text-muted-foreground">
+            Plătești online cu cardul, iar rezervarea se confirmă automat imediat după plată.
+          </p>
+        )}
       </CardContent>
     </Card>
   )

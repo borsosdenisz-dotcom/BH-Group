@@ -47,6 +47,21 @@ public class AuditService {
                 log.getDescription(), log.getCreatedAt());
     }
 
+    /**
+     * Records an action the system took on its own (no logged-in actor),
+     * inside the caller's transaction rather than a separate one: the audit
+     * row commits or rolls back together with the change it describes.
+     */
+    @Transactional
+    public void recordSystemEvent(AuditAction action, String entityName, UUID entityId, String description) {
+        auditLogRepository.save(AuditLog.builder()
+                .entityName(entityName)
+                .entityId(entityId != null ? entityId.toString() : null)
+                .action(action.name())
+                .description(description)
+                .build());
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void record(AuditAction action, User actor, String description, String ipAddress, String userAgent) {
         try {

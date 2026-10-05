@@ -40,11 +40,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 /** No test reaches Anthropic: only the model round trip is replaced. */
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 @MockitoSettings(strictness = Strictness.LENIENT)
 class PricingRecommendationServiceTest {
 
@@ -59,7 +62,9 @@ class PricingRecommendationServiceTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final UUID propertyId = UUID.randomUUID();
     private final UUID actorId = UUID.randomUUID();
-    private String modelAnswer;
+    private PricingRecommendationService.AnthropicResponse modelResponse;
+    private RuntimeException modelFailure;
+    private String modelRequestId;
     private String lastDataJson;
     private PricingRecommendationService service;
     private Property property;
@@ -104,9 +109,12 @@ class PricingRecommendationServiceTest {
                 propertyRepository, reservationRepository, seasonalRateRepository, localEventRepository,
                 dynamicPricingConfigService, auditService, properties, objectMapper, pricingAiRestClient) {
             @Override
-            String callModel(String apiKey, String dataJson) {
+            String callModel(String apiKey, String dataJson, UUID requestedPropertyId) {
                 lastDataJson = dataJson;
-                return modelAnswer;
+                if (modelFailure != null) {
+                    throw modelFailure;
+                }
+                return extractFirstTextBlock(modelResponse, modelRequestId, requestedPropertyId);
             }
         };
     }
@@ -147,7 +155,22 @@ class PricingRecommendationServiceTest {
     }
 
     private void stubClaude(String json) {
-        modelAnswer = json;
+        stubClaudeBlocks(List.of(textBlock(json)));
+    }
+
+    private void stubClaudeBlocks(List<PricingRecommendationService.AnthropicContentBlock> blocks) {
+        modelFailure = null;
+        modelRequestId = "req-test-123";
+        modelResponse = new PricingRecommendationService.AnthropicResponse(
+                "msg-test-123", "end_turn", blocks);
+    }
+
+    private PricingRecommendationService.AnthropicContentBlock textBlock(String text) {
+        return new PricingRecommendationService.AnthropicContentBlock("text", text);
+    }
+
+    private PricingRecommendationService.AnthropicContentBlock nonTextBlock(String type) {
+        return new PricingRecommendationService.AnthropicContentBlock(type, null);
     }
 
     private String validAnswer(String reasonCodes) {
@@ -169,10 +192,77 @@ class PricingRecommendationServiceTest {
 
     private void assertInvalidModel(String response) {
         stubClaude(response);
+        assertCurrentModelInvalid();
+    }
+
+    private void assertCurrentModelInvalid() {
         assertThatThrownBy(() -> service.recommend(propertyId, actorId, "admin@bhstays.ro"))
                 .isInstanceOfSatisfying(ApiException.class, ex -> {
                     assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_GATEWAY);
                     assertThat(ex.getErrorCode()).isEqualTo("PRICING_AI_INVALID_RESPONSE");
+                });
+        verify(dynamicPricingConfigService, never()).update(any(), any());
+    }
+
+    @Test
+    void recommend_usesTextBlockAfterLeadingNonTextBlock() {
+        stubClaudeBlocks(List.of(
+                nonTextBlock("thinking"),
+                textBlock(validAnswer("[]"))));
+
+        var result = service.recommend(propertyId, actorId, "admin@bhstays.ro");
+
+        assertThat(result.recommendation().minPrice()).isEqualByComparingTo("120.00");
+    }
+
+    @Test
+    void recommend_skipsBlankTextBlockAndUsesNextNonBlankTextBlock() {
+        stubClaudeBlocks(List.of(
+                textBlock("  \n\t"),
+                textBlock(validAnswer("[]"))));
+
+        var result = service.recommend(propertyId, actorId, "admin@bhstays.ro");
+
+        assertThat(result.recommendation().maxPrice()).isEqualByComparingTo("400.00");
+    }
+
+    @Test
+    void recommend_rejectsAllBlankAndNonTextBlocksAsEmptyResponse(CapturedOutput output) {
+        modelRequestId = "req-safe-123";
+        modelResponse = new PricingRecommendationService.AnthropicResponse(
+                "msg-safe-123", "end_turn", List.of(
+                        nonTextBlock("thinking"),
+                        textBlock(" "),
+                        nonTextBlock("tool_use")));
+
+        assertCurrentModelInvalid();
+
+        assertThat(output).contains(
+                "blockCount=3",
+                "blockTypes=[thinking, text, tool_use]",
+                "stopReason=end_turn",
+                "requestId=req-safe-123",
+                "EMPTY_RESPONSE");
+    }
+
+    @Test
+    void recommend_rejectsInvalidJsonFromSelectedTextBlock(CapturedOutput output) {
+        stubClaudeBlocks(List.of(
+                nonTextBlock("thinking"),
+                textBlock("not valid json")));
+
+        assertCurrentModelInvalid();
+        assertThat(output).contains("INVALID_JSON_SCHEMA");
+    }
+
+    @Test
+    void recommend_keepsProviderErrorsAsServiceUnavailable() {
+        modelFailure = new RestClientException("provider failed");
+
+        assertThatThrownBy(() -> service.recommend(propertyId, actorId, "admin@bhstays.ro"))
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+                    assertThat(ex.getErrorCode()).isEqualTo("PRICING_AI_UNAVAILABLE");
                 });
         verify(dynamicPricingConfigService, never()).update(any(), any());
     }
@@ -225,11 +315,17 @@ class PricingRecommendationServiceTest {
     }
 
     @Test
-    void recommend_rejectsInvertedAndRelativePriceViolations() {
+    void recommend_rejectsInvertedAndRelativePriceViolations(CapturedOutput output) {
         assertInvalidModel(answer("200", "190", "30", "0.90", "1.25", "7", "0.95", "[]"));
         assertInvalidModel(answer("99.99", "400", "30", "0.90", "1.25", "7", "0.95", "[]"));
         assertInvalidModel(answer("120", "600.01", "30", "0.90", "1.25", "7", "0.95", "[]"));
         assertInvalidModel(answer("100.001", "400", "30", "0.90", "1.25", "7", "0.95", "[]"));
+
+        assertThat(output).contains(
+                "INVERTED_PRICE_RANGE",
+                "MIN_PRICE_OUT_OF_RANGE",
+                "MAX_PRICE_OUT_OF_RANGE",
+                "INVALID_MIN_PRICE_PRECISION");
     }
 
     @Test
@@ -322,9 +418,13 @@ class PricingRecommendationServiceTest {
     }
 
     @Test
-    void recommend_rejectsReasonCodeWithoutSupportingEvidence() {
+    void recommend_rejectsReasonCodeWithoutSupportingEvidence(CapturedOutput output) {
         assertInvalidModel(validAnswer("[\"LOCAL_EVENT_CONFIGURED\"]"));
         assertInvalidModel(validAnswer("[\"BELOW_HISTORICAL_OCCUPANCY\"]"));
+
+        assertThat(output).contains(
+                "UNSUPPORTED_LOCAL_EVENT_REASON",
+                "REASON_REQUIRES_UNAVAILABLE_EVIDENCE");
     }
 
     @Test

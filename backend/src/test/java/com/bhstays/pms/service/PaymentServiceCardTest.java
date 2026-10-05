@@ -25,7 +25,9 @@ import com.bhstays.pms.repository.RefundRepository;
 import com.bhstays.pms.repository.ReservationRepository;
 import com.bhstays.pms.service.mapper.PaymentMapper;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -128,26 +130,64 @@ class PaymentServiceCardTest {
     }
 
     @Test
-    void markCardPaymentSucceeded_capturesAndConfirmsTheReservation() {
+    void recordCardCapture_capturesThePaymentWithoutTouchingTheReservation() {
         Payment payment = cardPayment(PaymentStatus.PENDING);
         when(paymentRepository.save(any(Payment.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(paymentRepository.sumNetPaidForReservation(any(), any())).thenReturn(new BigDecimal("500.00"));
 
-        paymentService.markCardPaymentSucceeded(payment, "pi_test_1");
+        paymentService.recordCardCapture(payment, "pi_test_2");
 
         assertThat(payment.getStatus()).isEqualTo(PaymentStatus.SUCCEEDED);
-        assertThat(payment.getProviderPaymentId()).isEqualTo("pi_test_1");
-        verify(reservationService).updateStatus(any(), any());
+        assertThat(payment.getProviderPaymentId()).isEqualTo("pi_test_2");
+        verify(paymentTransactionRepository).save(any());
+        // confirming the booking is the verified webhook's decision, not a side effect here
+        verify(reservationService, never()).updateStatus(any(), any());
     }
 
     @Test
-    void markCardPaymentSucceeded_isANoOpWhenThePaymentWasAlreadyCaptured() {
+    void markCardPaymentFailed_leavesACapturedPaymentAlone() {
         Payment payment = cardPayment(PaymentStatus.SUCCEEDED);
 
-        paymentService.markCardPaymentSucceeded(payment, "pi_test_1");
+        paymentService.markCardPaymentFailed(payment, "Card declined");
 
-        verify(reservationService, never()).updateStatus(any(), any());
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.SUCCEEDED);
         verify(paymentTransactionRepository, never()).save(any());
+    }
+
+    @Test
+    void findOpenCardCheckout_countsADeclinedPaymentWhoseSessionIsStillOpen() {
+        Instant now = Instant.now();
+        Payment declined = cardPayment(PaymentStatus.FAILED);
+        declined.setCheckoutSessionId("cs_open");
+        declined.setCheckoutExpiresAt(now.plus(10, ChronoUnit.MINUTES));
+        when(paymentRepository.findByReservationIdOrderByCreatedAtDesc(reservation.getId()))
+                .thenReturn(List.of(declined));
+
+        assertThat(paymentService.findOpenCardCheckout(reservation.getId(), now)).contains(declined);
+    }
+
+    @Test
+    void findOpenCardCheckout_ignoresAnExpiredSession() {
+        Instant now = Instant.now();
+        Payment stale = cardPayment(PaymentStatus.PENDING);
+        stale.setCheckoutSessionId("cs_old");
+        stale.setCheckoutExpiresAt(now.minus(1, ChronoUnit.MINUTES));
+        when(paymentRepository.findByReservationIdOrderByCreatedAtDesc(reservation.getId()))
+                .thenReturn(List.of(stale));
+
+        assertThat(paymentService.findOpenCardCheckout(reservation.getId(), now)).isEmpty();
+    }
+
+    @Test
+    void cancelOpenCardPayments_closesOnlyUncapturedCardPayments() {
+        Payment open = cardPayment(PaymentStatus.PENDING);
+        Payment captured = cardPayment(PaymentStatus.SUCCEEDED);
+        when(paymentRepository.findByReservationIdOrderByCreatedAtDesc(reservation.getId()))
+                .thenReturn(List.of(open, captured));
+
+        paymentService.cancelOpenCardPayments(reservation.getId());
+
+        assertThat(open.getStatus()).isEqualTo(PaymentStatus.CANCELLED);
+        assertThat(captured.getStatus()).isEqualTo(PaymentStatus.SUCCEEDED);
     }
 
     @Test

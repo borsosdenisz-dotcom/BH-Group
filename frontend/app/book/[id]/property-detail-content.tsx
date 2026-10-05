@@ -13,7 +13,7 @@ import { PropertyBookingCard } from "@/components/booking/property-booking-card"
 import { PropertyFacts } from "@/components/booking/property-facts"
 import { PropertyGallery } from "@/components/booking/property-gallery"
 import { PropertyLocation } from "@/components/booking/property-location"
-import { usePublicProperty, usePublicQuote } from "@/hooks/use-public-booking"
+import { usePaymentConfig, usePublicProperty, usePublicQuote } from "@/hooks/use-public-booking"
 import { PROPERTY_TYPE_LABELS } from "@/lib/property-labels"
 
 function PropertyDetailInner({ id }: { id: string }) {
@@ -52,6 +52,10 @@ function PropertyDetailInner({ id }: { id: string }) {
   }
 
   const quoteQuery = usePublicQuote(property?.id ?? "", checkIn ?? "", checkOut ?? "", guests)
+  const paymentConfig = usePaymentConfig()
+  // Card-only: no online payment means no online booking. While the config
+  // is still loading the CTA stays as is; the booking page re-checks anyway.
+  const onlineBookingAvailable = paymentConfig.isLoading || paymentConfig.data?.cardPaymentsEnabled === true
 
   function scrollToAvailability() {
     availabilityRef.current?.scrollIntoView({
@@ -119,6 +123,7 @@ function PropertyDetailInner({ id }: { id: string }) {
             bookingHref={bookingHref}
             onGuestsChange={(next) => updateSelection({ guests: next })}
             onScrollToCalendar={scrollToAvailability}
+            onlineBookingAvailable={onlineBookingAvailable}
           />
         </aside>
 
@@ -171,6 +176,7 @@ function PropertyDetailInner({ id }: { id: string }) {
         quote={quoteQuery.data}
         isQuoteLoading={quoteQuery.isLoading}
         bookingHref={bookingHref}
+        onlineBookingAvailable={onlineBookingAvailable}
       />
       {/* Compensates for the fixed mobile bar so the last section isn't hidden behind it. */}
       <div className="h-24 lg:hidden" aria-hidden />

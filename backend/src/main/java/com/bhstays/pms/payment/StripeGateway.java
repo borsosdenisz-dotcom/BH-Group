@@ -124,6 +124,30 @@ public class StripeGateway implements PaymentGateway {
     }
 
     /**
+     * Closes a still-open Checkout session so it can no longer be paid -
+     * used before a replacement session is opened for the same booking, so
+     * the guest can never end up paying twice. A session that already
+     * expired is fine; one that was completed is not, and is reported as such.
+     */
+    public void expireCheckoutSession(String sessionId) {
+        try {
+            stripeClient.checkout().sessions().expire(sessionId);
+        } catch (StripeException ex) {
+            String status = null;
+            try {
+                status = stripeClient.checkout().sessions().retrieve(sessionId).getStatus();
+            } catch (StripeException ignored) {
+                // fall through with an unknown status
+            }
+            if ("expired".equals(status)) {
+                return;
+            }
+            log.warn("Could not expire Stripe Checkout session {} (status {})", sessionId, status);
+            throw new StripePaymentException("Plata anterioară este încă în curs de procesare. Reîncearcă în câteva minute.", ex);
+        }
+    }
+
+    /**
      * A Stripe charge is never completed inline: the guest pays on Stripe's
      * hosted page and the outcome comes back over the webhook, so this only
      * reports that the payment is in flight.
@@ -192,7 +216,7 @@ public class StripeGateway implements PaymentGateway {
      * 100. {@link #SUPPORTED_CURRENCIES} deliberately excludes everything
      * else rather than assuming an exponent.
      */
-    private long toMinorUnits(BigDecimal amount) {
+    public static long toMinorUnits(BigDecimal amount) {
         return amount.setScale(2, RoundingMode.HALF_UP).movePointRight(2).longValueExact();
     }
 

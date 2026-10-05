@@ -104,6 +104,12 @@ describe("MobileBookingBar", () => {
     expect(screen.getByRole("button", { name: "Indisponibilă" })).toBeDisabled()
   })
 
+  it("disables the CTA when online card payment is unavailable, even for an available quote", () => {
+    renderBar({ checkIn: "2026-09-01", checkOut: "2026-09-05", quote: baseQuote, onlineBookingAvailable: false })
+    expect(screen.getByRole("button", { name: "Rezervare online indisponibilă" })).toBeDisabled()
+    expect(screen.queryByRole("link", { name: "Rezervă" })).not.toBeInTheDocument()
+  })
+
   it("enables the CTA as a link only when the quote is available", () => {
     renderBar({ checkIn: "2026-09-01", checkOut: "2026-09-05", quote: baseQuote })
     const cta = screen.getByRole("link", { name: "Rezervă" })

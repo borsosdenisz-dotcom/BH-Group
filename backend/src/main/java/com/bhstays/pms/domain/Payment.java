@@ -9,6 +9,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -68,6 +69,20 @@ public class Payment extends BaseEntity {
 
     @Column(name = "provider_payment_id")
     private String providerPaymentId;
+
+    /**
+     * The hosted Stripe Checkout session this card payment is collected
+     * through. The signed webhook is matched to the payment by this id, so
+     * a delivery for any other session can never capture this row.
+     */
+    @Column(name = "checkout_session_id")
+    private String checkoutSessionId;
+
+    @Column(name = "checkout_url", columnDefinition = "text")
+    private String checkoutUrl;
+
+    @Column(name = "checkout_expires_at")
+    private Instant checkoutExpiresAt;
 
     @Column(length = 1000)
     private String notes;
