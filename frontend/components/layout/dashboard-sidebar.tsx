@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Building2 } from "lucide-react"
+import { ArrowLeft, Building2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { DASHBOARD_NAV_ITEMS } from "@/lib/dashboard-nav"
@@ -17,11 +17,25 @@ export function DashboardSidebar() {
 
   return (
     <aside className="hidden w-60 shrink-0 border-r border-border/60 bg-background md:flex md:flex-col">
-      <div className="flex h-16 items-center gap-2 px-6 font-semibold tracking-tight">
-        <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <Building2 className="size-3.5" />
-        </span>
-        BH Stays
+      <div className="flex h-16 items-center gap-1 px-3">
+        <Link
+          href="/"
+          aria-label="Înapoi la portalul clienților"
+          title="Portal clienți"
+          className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" />
+        </Link>
+        <Link
+          href="/dashboard"
+          aria-label="Meniul principal BH Stays"
+          className="flex min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 font-semibold tracking-tight transition-colors hover:bg-muted"
+        >
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Building2 className="size-3.5" />
+          </span>
+          <span>BH Stays</span>
+        </Link>
       </div>
       <nav className="flex flex-1 flex-col gap-1 px-3 py-2">
         {visibleItems.map((item) => {
