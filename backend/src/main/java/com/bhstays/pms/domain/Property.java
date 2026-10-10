@@ -128,7 +128,11 @@ public class Property extends BaseEntity {
     @JoinColumn(name = "owner_id")
     private User owner;
 
-    /** Percentage of this property's revenue BH Stays keeps as commission. */
+    /**
+     * BH Stays management commission, 0.00-100.00, applied to the
+     * accommodation part of captured revenue only. Null = not configured:
+     * no BH Stays revenue is reported for the property until it is set.
+     */
     @Column(name = "commission_percent", precision = 5, scale = 2)
     private BigDecimal commissionPercent;
 

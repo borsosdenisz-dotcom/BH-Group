@@ -4,6 +4,7 @@ import com.bhstays.pms.common.csv.CsvWriter;
 import com.bhstays.pms.common.exception.ResourceNotFoundException;
 import com.bhstays.pms.common.response.ApiResponse;
 import com.bhstays.pms.common.response.PageResponse;
+import com.bhstays.pms.dto.property.PropertyCommissionUpdateRequest;
 import com.bhstays.pms.dto.property.PropertyCreateRequest;
 import com.bhstays.pms.dto.property.PropertyDocumentResponse;
 import com.bhstays.pms.dto.property.PropertyIntegrationModeUpdateRequest;
@@ -117,6 +118,16 @@ public class PropertyController {
         return ResponseEntity.ok(ApiResponse.success(
                 propertyService.updateIntegrationMode(id, request.mode(), currentUser),
                 "Integration mode updated successfully"));
+    }
+
+    @PatchMapping("/{id}/management-commission")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMINISTRATOR')")
+    @Operation(summary = "Set or clear the BH Stays management commission (0.00-100.00%) for a property")
+    public ResponseEntity<ApiResponse<PropertyResponse>> updateManagementCommission(
+            @PathVariable UUID id, @Valid @RequestBody PropertyCommissionUpdateRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                propertyService.updateCommission(id, request.commissionPercent()),
+                "Management commission updated successfully"));
     }
 
     @DeleteMapping("/{id}")

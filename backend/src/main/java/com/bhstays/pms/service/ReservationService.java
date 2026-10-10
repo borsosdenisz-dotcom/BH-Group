@@ -7,6 +7,7 @@ import com.bhstays.pms.domain.AuditAction;
 import com.bhstays.pms.domain.Property;
 import com.bhstays.pms.repository.PropertyRepository;
 import com.bhstays.pms.domain.PropertyStatus;
+import com.bhstays.pms.dto.property.PriceQuoteResponse;
 import com.bhstays.pms.dto.reservation.AccessCodeUpdateRequest;
 import com.bhstays.pms.dto.reservation.AvailabilityResponse;
 import com.bhstays.pms.dto.reservation.CalendarEntryResponse;
@@ -179,6 +180,7 @@ public class ReservationService {
                 .currency(request.currency() != null && !request.currency().isBlank() ? request.currency() : "RON")
                 .notes(request.notes())
                 .build();
+        snapshotStaffEnteredTotal(reservation);
 
         reservation = saveGuardingOverlap(reservation);
 
@@ -213,6 +215,7 @@ public class ReservationService {
             reservation.setCurrency(request.currency());
         }
         reservation.setNotes(request.notes());
+        snapshotStaffEnteredTotal(reservation);
 
         reservation = saveGuardingOverlap(reservation);
         return reservationMapper.toResponse(reservation);
@@ -330,6 +333,7 @@ public class ReservationService {
         pricingService.validateStayLength(property, (int) ChronoUnit.DAYS.between(checkInDate, checkOutDate));
         assertNoOverlap(propertyId, checkInDate, checkOutDate, null);
 
+        PriceQuoteResponse quote = pricingService.quote(property, checkInDate, checkOutDate, numberOfGuests);
         Reservation reservation = Reservation.builder()
                 .property(property)
                 .guestFirstName(guestFirstName)
@@ -341,13 +345,14 @@ public class ReservationService {
                 .numberOfGuests(numberOfGuests)
                 .status(ReservationStatus.PENDING)
                 .source(ReservationSource.DIRECT)
-                .totalAmount(pricingService.quote(property, checkInDate, checkOutDate, numberOfGuests).totalAmount())
+                .totalAmount(quote.totalAmount())
                 .currency("RON")
                 .notes(notes)
                 .managementToken(secureTokenGenerator.generateRawToken())
                 .idempotencyKey(idempotencyKey != null && !idempotencyKey.isBlank() ? idempotencyKey : null)
                 .holdExpiresAt(Instant.now().plus(GUEST_BOOKING_HOLD_DURATION))
                 .build();
+        ReservationPriceSnapshot.apply(reservation, quote);
 
         try {
             return reservationRepository.saveAndFlush(reservation);
@@ -452,11 +457,26 @@ public class ReservationService {
         reservation.setCheckInDate(checkInDate);
         reservation.setCheckOutDate(checkOutDate);
         reservation.setNumberOfGuests(numberOfGuests);
-        reservation.setTotalAmount(pricingService
-                .quote(reservation.getProperty(), checkInDate, checkOutDate, numberOfGuests)
-                .totalAmount());
+        PriceQuoteResponse quote = pricingService
+                .quote(reservation.getProperty(), checkInDate, checkOutDate, numberOfGuests);
+        reservation.setTotalAmount(quote.totalAmount());
+        ReservationPriceSnapshot.apply(reservation, quote);
 
         return saveGuardingOverlap(reservation);
+    }
+
+    /**
+     * A staff-entered total only gets a price breakdown when it is exactly
+     * what the pricing engine quotes for the same stay; any other amount
+     * (negotiated price, OTA payout, different currency) keeps the split
+     * unknown rather than inventing one.
+     */
+    private void snapshotStaffEnteredTotal(Reservation reservation) {
+        PriceQuoteResponse quote = reservation.getTotalAmount() != null
+                ? pricingService.quote(reservation.getProperty(), reservation.getCheckInDate(),
+                        reservation.getCheckOutDate(), reservation.getNumberOfGuests())
+                : null;
+        ReservationPriceSnapshot.apply(reservation, quote);
     }
 
     /**

@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { OwnerRevenueLines } from "@/components/finance/owner-revenue-lines"
 import { AlertTriangle, ArrowRight, Building2, CalendarClock, Wallet } from "lucide-react"
 import {
   Card,
@@ -15,10 +16,6 @@ import { useCurrentUser } from "@/hooks/use-current-user"
 import { useOwnerDashboardSummary } from "@/hooks/use-owner"
 import { RESERVATION_STATUS_LABELS } from "@/lib/reservation-labels"
 import { MAINTENANCE_PRIORITY_BADGE_VARIANT, MAINTENANCE_PRIORITY_LABELS } from "@/lib/cleaning-labels"
-
-function formatCurrency(value: number, currency: string) {
-  return new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 }).format(value) + " " + currency
-}
 
 export function OwnerDashboardOverview() {
   const { data: user, isLoading: isUserLoading } = useCurrentUser()
@@ -35,57 +32,23 @@ export function OwnerDashboardOverview() {
         </p>
       </div>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-1.5 text-base">
+            <Wallet className="size-4" aria-hidden /> Încasări și sumă de plată
+          </CardTitle>
+          <CardDescription>Bani încasați după refunduri, separat pe monedă.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading || !summary ? (
+            <Skeleton className="h-32 w-full" aria-label="Se încarcă încasările" />
+          ) : (
+            <OwnerRevenueLines lines={summary.revenueByCurrency} />
+          )}
+        </CardContent>
+      </Card>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <Card className="border-primary/20 bg-primary/5">
-          <CardHeader>
-            <CardDescription className="flex items-center gap-1.5">
-              <Wallet className="size-3.5" /> Venit net
-            </CardDescription>
-            <CardTitle className="text-2xl">
-              {isLoading || !summary ? (
-                <Skeleton className="h-8 w-32" />
-              ) : (
-                formatCurrency(summary.netRevenue, summary.currency)
-              )}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Venit brut</CardDescription>
-            <CardTitle className="text-2xl">
-              {isLoading || !summary ? (
-                <Skeleton className="h-8 w-32" />
-              ) : (
-                formatCurrency(summary.grossRevenue, summary.currency)
-              )}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Comision BH Stays</CardDescription>
-            <CardTitle className="text-2xl">
-              {isLoading || !summary ? (
-                <Skeleton className="h-8 w-32" />
-              ) : (
-                formatCurrency(summary.commissionAmount, summary.currency)
-              )}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Cheltuieli</CardDescription>
-            <CardTitle className="text-2xl">
-              {isLoading || !summary ? (
-                <Skeleton className="h-8 w-32" />
-              ) : (
-                formatCurrency(summary.expensesTotal, summary.currency)
-              )}
-            </CardTitle>
-          </CardHeader>
-        </Card>
         <Card>
           <CardHeader>
             <CardDescription className="flex items-center gap-1.5">

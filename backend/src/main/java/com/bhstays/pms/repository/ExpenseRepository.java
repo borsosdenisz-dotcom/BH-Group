@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import com.bhstays.pms.repository.projection.PropertyCurrencyAmount;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -54,4 +55,31 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID>, JpaSpec
     List<Object[]> sumChargeableToOwnerForPropertyGroupedByCurrency(@Param("propertyId") UUID propertyId,
                                                                       @Param("from") LocalDate from,
                                                                       @Param("to") LocalDate to);
+
+    /** Expenses of every property, summed per property and currency, in one query (both bounds required). */
+    @Query("""
+            select new com.bhstays.pms.repository.projection.PropertyCurrencyAmount(
+                e.property.id, e.currency, coalesce(sum(e.amount), 0))
+            from Expense e
+            where e.expenseDate >= :from
+              and e.expenseDate <= :to
+            group by e.property.id, e.currency
+            """)
+    List<PropertyCurrencyAmount> sumGroupedByPropertyAndCurrency(@Param("from") LocalDate from,
+                                                                @Param("to") LocalDate to);
+
+    /** Owner-chargeable expenses of one owner's properties, per property and currency, in one query. */
+    @Query("""
+            select new com.bhstays.pms.repository.projection.PropertyCurrencyAmount(
+                e.property.id, e.currency, coalesce(sum(e.amount), 0))
+            from Expense e
+            where e.property.owner.id = :ownerId
+              and e.chargeToOwner = true
+              and e.expenseDate >= :from
+              and e.expenseDate <= :to
+            group by e.property.id, e.currency
+            """)
+    List<PropertyCurrencyAmount> sumChargeableToOwnerGroupedByPropertyAndCurrency(@Param("ownerId") UUID ownerId,
+                                                                                 @Param("from") LocalDate from,
+                                                                                 @Param("to") LocalDate to);
 }

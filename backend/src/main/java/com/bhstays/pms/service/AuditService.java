@@ -62,6 +62,24 @@ public class AuditService {
                 .build());
     }
 
+    /**
+     * Records a change a logged-in user made to an entity, inside the
+     * caller's transaction so the audit row commits or rolls back with the
+     * change itself.
+     */
+    @Transactional
+    public void recordEntityChange(AuditAction action, String entityName, UUID entityId, UUID actorId,
+                                   String actorEmail, String description) {
+        auditLogRepository.save(AuditLog.builder()
+                .entityName(entityName)
+                .entityId(entityId != null ? entityId.toString() : null)
+                .action(action.name())
+                .actorId(actorId)
+                .actorEmail(actorEmail)
+                .description(description)
+                .build());
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void record(AuditAction action, User actor, String description, String ipAddress, String userAgent) {
         try {

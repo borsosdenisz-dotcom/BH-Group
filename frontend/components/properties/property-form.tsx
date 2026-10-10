@@ -38,6 +38,7 @@ import {
   PROPERTY_TYPE_LABELS,
 } from "@/lib/property-labels"
 import { useUsers } from "@/hooks/use-users"
+import { commissionPercentSchema } from "@/lib/commission"
 import type { PropertyPayload } from "@/lib/api/properties"
 import type { PropertyResponse } from "@/lib/api/types"
 
@@ -74,7 +75,7 @@ const propertySchema = z.object({
   maxStayNights: z.coerce.number().int().min(1).optional(),
   cancellationPolicy: z.enum(ALL_CANCELLATION_POLICIES as [string, ...string[]]),
   ownerId: z.string().optional(),
-  commissionPercent: z.coerce.number().min(0).max(100).optional(),
+  commissionPercent: commissionPercentSchema,
   cleaningChecklist: z.array(z.string()),
   checkInTime: z.string().min(1),
   checkOutTime: z.string().min(1),
@@ -763,13 +764,13 @@ export function PropertyForm({ property, mode, onSubmit, isSubmitting }: Propert
               name="commissionPercent"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Comision BH Stays (%)</FormLabel>
+                  <FormLabel>Comision administrare BH Stays (%)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       min={0}
                       max={100}
-                      step="0.1"
+                      step="0.01"
                       {...field}
                       value={(field.value as number | undefined) ?? ""}
                     />

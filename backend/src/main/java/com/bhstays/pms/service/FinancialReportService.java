@@ -1,72 +1,66 @@
 package com.bhstays.pms.service;
 
-import com.bhstays.pms.domain.PaymentStatus;
-import com.bhstays.pms.domain.Property;
+import com.bhstays.pms.dto.report.CommissionSummaryCurrencyTotals;
 import com.bhstays.pms.dto.report.FinancialReportCurrencyTotals;
 import com.bhstays.pms.dto.report.FinancialReportRowResponse;
 import com.bhstays.pms.dto.report.FinancialReportSummaryResponse;
+import com.bhstays.pms.dto.report.PropertyCommissionCurrencyResponse;
 import com.bhstays.pms.repository.ExpenseRepository;
-import com.bhstays.pms.repository.PaymentRepository;
 import com.bhstays.pms.repository.PropertyRepository;
+import com.bhstays.pms.repository.projection.PropertyCommissionSettings;
+import com.bhstays.pms.repository.projection.PropertyCurrencyAmount;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Revenue here is net captured payments (amount minus successful refunds),
- * never a reservation's {@code totalAmount} - a CONFIRMED reservation can
- * still be unpaid, and this report must not count money that was never
- * actually received. Amounts are grouped by currency throughout (a property
- * can have payments/expenses in more than one currency) rather than summed
- * together, since there's no FX conversion here.
+ * The /finance report: per property and currency, the collected-money
+ * figures of {@link PropertyCommissionReportService} (captures and
+ * successful refunds dated by their transactions, commission on
+ * accommodation only, at each reservation's snapshotted percent) plus the
+ * property's expenses (by expense date). It never computes revenue or commission itself, so
+ * it always matches the property report and the dashboard for the same
+ * period. Amounts in different currencies are never added together.
  */
 @Service
 @RequiredArgsConstructor
 public class FinancialReportService {
 
-    private static final Set<PaymentStatus> NET_PAID_STATUSES =
-            Set.of(PaymentStatus.SUCCEEDED, PaymentStatus.PARTIALLY_REFUNDED);
-    private static final String DEFAULT_CURRENCY = "RON";
-
     private final PropertyRepository propertyRepository;
-    private final PaymentRepository paymentRepository;
     private final ExpenseRepository expenseRepository;
+    private final PropertyCommissionReportService commissionReportService;
 
     @Transactional(readOnly = true)
     public FinancialReportSummaryResponse summary(UUID propertyId, LocalDate from, LocalDate to) {
-        List<Property> properties = propertyId != null
-                ? propertyRepository.findById(propertyId).map(List::of).orElseGet(List::of)
-                : propertyRepository.findAll();
+        FinancialPeriod.validate(from, to);
+        List<PropertyCommissionSettings> properties = propertyId != null
+                ? propertyRepository.findCommissionSettings(propertyId).map(List::of).orElseGet(List::of)
+                : propertyRepository.findAllCommissionSettings();
+        if (properties.isEmpty()) {
+            return new FinancialReportSummaryResponse(List.of(), List.of());
+        }
 
-        List<FinancialReportRowResponse> rows = properties.stream()
-                .flatMap(property -> buildRows(property, from, to).stream())
-                .toList();
+        Map<UUID, List<PropertyCommissionCurrencyResponse>> revenue =
+                commissionReportService.linesFor(properties, from, to);
+        Map<UUID, Map<String, BigDecimal>> expenses = expensesByProperty(from, to);
 
-        Map<String, List<FinancialReportRowResponse>> rowsByCurrency = rows.stream()
-                .collect(Collectors.groupingBy(FinancialReportRowResponse::currency, LinkedHashMap::new, Collectors.toList()));
+        List<FinancialReportRowResponse> rows = new ArrayList<>();
+        for (PropertyCommissionSettings property : properties) {
+            rows.addAll(buildRows(property, revenue.getOrDefault(property.id(), List.of()),
+                    expenses.getOrDefault(property.id(), Map.of())));
+        }
 
-        List<FinancialReportCurrencyTotals> totals = rowsByCurrency.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(entry -> new FinancialReportCurrencyTotals(
-                        entry.getKey(),
-                        sum(entry.getValue(), FinancialReportRowResponse::grossRevenue),
-                        sum(entry.getValue(), FinancialReportRowResponse::commissionAmount),
-                        sum(entry.getValue(), FinancialReportRowResponse::expensesTotal),
-                        sum(entry.getValue(), FinancialReportRowResponse::netProfit)))
-                .toList();
-
-        return new FinancialReportSummaryResponse(rows, totals);
+        return new FinancialReportSummaryResponse(rows, totals(revenue, rows));
     }
 
     @Transactional(readOnly = true)
@@ -75,58 +69,93 @@ public class FinancialReportService {
                 .map(row -> List.of(
                         row.propertyName(),
                         row.ownerName() != null ? row.ownerName() : "BH Stays",
-                        row.grossRevenue().toString(),
-                        row.commissionAmount().toString(),
-                        row.expensesTotal().toString(),
-                        row.netProfit().toString(),
+                        row.capturedTotal().toPlainString(),
+                        row.refundedTotal().toPlainString(),
+                        row.netRevenue().toPlainString(),
+                        row.commissionableBase().toPlainString(),
+                        row.commissionPercents().stream().map(BigDecimal::toPlainString)
+                                .collect(java.util.stream.Collectors.joining(" / ")),
+                        row.bhStaysRevenue().toPlainString(),
+                        row.ownerAmount().toPlainString(),
+                        row.unallocatedNetRevenue().toPlainString(),
+                        row.expensesTotal().toPlainString(),
+                        row.netProfit().toPlainString(),
                         row.currency()
                 ))
                 .toList();
     }
 
-    /** One row per currency that had any captured revenue or expense for this property in the period. */
-    private List<FinancialReportRowResponse> buildRows(Property property, LocalDate from, LocalDate to) {
-        Map<String, BigDecimal> revenueByCurrency = toCurrencyMap(
-                paymentRepository.sumNetPaidByPropertyGroupedByCurrency(property.getId(), NET_PAID_STATUSES, from, to));
-        Map<String, BigDecimal> expensesByCurrency = toCurrencyMap(
-                expenseRepository.sumForPropertyGroupedByCurrency(property.getId(), from, to));
+    /**
+     * One row per currency with money movements or expenses. A property with
+     * neither has no row: there is no currency to show it in, and none is
+     * assumed.
+     */
+    private List<FinancialReportRowResponse> buildRows(PropertyCommissionSettings property,
+                                                       List<PropertyCommissionCurrencyResponse> revenueLines,
+                                                       Map<String, BigDecimal> expensesByCurrency) {
+        Map<String, PropertyCommissionCurrencyResponse> revenueByCurrency = new HashMap<>();
+        revenueLines.forEach(line -> revenueByCurrency.put(line.currency(), line));
 
         Set<String> currencies = new TreeSet<>();
         currencies.addAll(revenueByCurrency.keySet());
         currencies.addAll(expensesByCurrency.keySet());
-        if (currencies.isEmpty()) {
-            currencies.add(DEFAULT_CURRENCY);
-        }
-
-        String ownerName = property.getOwner() != null
-                ? property.getOwner().getFirstName() + " " + property.getOwner().getLastName()
-                : null;
 
         return currencies.stream()
                 .map(currency -> {
-                    BigDecimal grossRevenue = revenueByCurrency.getOrDefault(currency, BigDecimal.ZERO);
-                    BigDecimal commissionAmount = property.getCommissionPercent() != null
-                            ? grossRevenue.multiply(property.getCommissionPercent())
-                                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
-                            : BigDecimal.ZERO;
-                    BigDecimal expensesTotal = expensesByCurrency.getOrDefault(currency, BigDecimal.ZERO);
-                    BigDecimal netProfit = grossRevenue.subtract(expensesTotal);
-
-                    return new FinancialReportRowResponse(property.getId(), property.getName(), ownerName,
-                            grossRevenue, commissionAmount, expensesTotal, netProfit, currency);
+                    PropertyCommissionCurrencyResponse line = revenueByCurrency.containsKey(currency)
+                            ? revenueByCurrency.get(currency)
+                            : PropertyCommissionCalculator.empty(currency);
+                    BigDecimal expensesTotal = PropertyCommissionCalculator.money(
+                            expensesByCurrency.getOrDefault(currency, BigDecimal.ZERO));
+                    return new FinancialReportRowResponse(
+                            property.id(), property.name(), property.ownerName(), currency,
+                            line.capturedTotal(), line.refundedTotal(), line.netRevenue(),
+                            line.commissionableBase(), line.commissionPercents(),
+                            property.commissionPercent() != null
+                                    ? PropertyCommissionCalculator.money(property.commissionPercent()) : null,
+                            line.bhStaysRevenue(), line.ownerAmount(),
+                            line.unallocatedNetRevenue(), line.unallocatedReservationCount(),
+                            expensesTotal,
+                            line.netRevenue().subtract(expensesTotal),
+                            line.netRevenue(),
+                            line.bhStaysRevenue());
                 })
                 .toList();
     }
 
-    private Map<String, BigDecimal> toCurrencyMap(List<Object[]> rows) {
-        Map<String, BigDecimal> result = new LinkedHashMap<>();
-        for (Object[] row : rows) {
-            result.put((String) row[0], (BigDecimal) row[1]);
+    /** Revenue totals are exactly the dashboard's; currencies that only have expenses get zero revenue. */
+    private List<FinancialReportCurrencyTotals> totals(Map<UUID, List<PropertyCommissionCurrencyResponse>> revenue,
+                                                       List<FinancialReportRowResponse> rows) {
+        Map<String, CommissionSummaryCurrencyTotals> revenueTotals = new HashMap<>();
+        PropertyCommissionReportService.totalsByCurrency(revenue.values())
+                .forEach(total -> revenueTotals.put(total.currency(), total));
+
+        Map<String, BigDecimal> expensesByCurrency = new TreeMap<>();
+        for (FinancialReportRowResponse row : rows) {
+            expensesByCurrency.merge(row.currency(), row.expensesTotal(), BigDecimal::add);
         }
-        return result;
+
+        return expensesByCurrency.entrySet().stream()
+                .map(entry -> {
+                    String currency = entry.getKey();
+                    CommissionSummaryCurrencyTotals revenueTotal = revenueTotals.containsKey(currency)
+                            ? revenueTotals.get(currency)
+                            : PropertyCommissionCalculator.totals(currency, List.of());
+                    BigDecimal expensesTotal = PropertyCommissionCalculator.money(entry.getValue());
+                    return new FinancialReportCurrencyTotals(currency, revenueTotal, expensesTotal,
+                            revenueTotal.propertiesNetRevenue().subtract(expensesTotal),
+                            revenueTotal.propertiesNetRevenue(), revenueTotal.bhStaysRevenue());
+                })
+                .toList();
     }
 
-    private BigDecimal sum(List<FinancialReportRowResponse> rows, Function<FinancialReportRowResponse, BigDecimal> extractor) {
-        return rows.stream().map(extractor).reduce(BigDecimal.ZERO, BigDecimal::add);
+    private Map<UUID, Map<String, BigDecimal>> expensesByProperty(LocalDate from, LocalDate to) {
+        Map<UUID, Map<String, BigDecimal>> result = new HashMap<>();
+        for (PropertyCurrencyAmount amount : expenseRepository.sumGroupedByPropertyAndCurrency(
+                FinancialPeriod.startOf(from), FinancialPeriod.endOf(to))) {
+            result.computeIfAbsent(amount.propertyId(), id -> new HashMap<>())
+                    .merge(amount.currency(), amount.amount(), BigDecimal::add);
+        }
+        return result;
     }
 }

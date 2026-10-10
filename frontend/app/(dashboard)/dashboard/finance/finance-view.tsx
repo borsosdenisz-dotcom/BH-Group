@@ -16,22 +16,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { DataPagination } from "@/components/ui/data-pagination"
 import { downloadFile } from "@/lib/download-file"
 import { useCreateExpense, useDeleteExpense, useExpenses, useUploadExpenseReceipt } from "@/hooks/use-expenses"
-import { useFinancialReport } from "@/hooks/use-financial-reports"
 import { useProperties } from "@/hooks/use-properties"
 import { ALL_EXPENSE_CATEGORIES, EXPENSE_CATEGORY_LABELS } from "@/lib/expense-labels"
 import { formatLocalDate } from "@/lib/date"
+import { FinancialReportSection } from "./financial-report-section"
 import { OwnerStatementsSection } from "./owner-statements-section"
 import type { ExpenseCategory } from "@/lib/api/types"
 
@@ -97,91 +88,6 @@ function PropertyFilterSelect({ value, onChange }: { value: string; onChange: (v
         </SelectContent>
       </Select>
     </div>
-  )
-}
-
-function FinancialReportSection({ propertyId, from, to }: { propertyId: string; from: string; to: string }) {
-  const { data, isLoading } = useFinancialReport({ propertyId: propertyId || undefined, from, to })
-
-  async function handleExport() {
-    const params = new URLSearchParams()
-    if (propertyId) params.set("propertyId", propertyId)
-    if (from) params.set("from", from)
-    if (to) params.set("to", to)
-    try {
-      await downloadFile(`/reports/financial/export?${params.toString()}`, "raport-financiar.csv")
-    } catch {
-      toast.error("Exportul a eșuat")
-    }
-  }
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-base">Raport de profitabilitate</CardTitle>
-        <Button type="button" variant="outline" size="sm" className="gap-2" onClick={handleExport}>
-          <Download className="size-4" />
-          Export CSV
-        </Button>
-      </CardHeader>
-      <CardContent>
-        {isLoading || !data ? (
-          <Skeleton className="h-32 w-full" />
-        ) : data.rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nicio proprietate găsită.</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Proprietate</TableHead>
-                <TableHead>Proprietar</TableHead>
-                <TableHead className="text-right">Venit brut</TableHead>
-                <TableHead className="text-right">Comision</TableHead>
-                <TableHead className="text-right">Cheltuieli</TableHead>
-                <TableHead className="text-right">Profit net</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.rows.map((row) => (
-                <TableRow key={row.propertyId}>
-                  <TableCell className="font-medium">{row.propertyName}</TableCell>
-                  <TableCell className="text-muted-foreground">{row.ownerName ?? "BH Stays"}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(row.grossRevenue, row.currency)}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(row.commissionAmount, row.currency)}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(row.expensesTotal, row.currency)}</TableCell>
-                  <TableCell
-                    className={`text-right font-medium ${row.netProfit < 0 ? "text-destructive" : ""}`}
-                  >
-                    {formatCurrency(row.netProfit, row.currency)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-            <TableFooter>
-              {data.totals.map((totals) => (
-                <TableRow key={totals.currency}>
-                  <TableCell colSpan={2}>Total {totals.currency}</TableCell>
-                  <TableCell className="text-right">
-                    {formatCurrency(totals.totalGrossRevenue, totals.currency)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {formatCurrency(totals.totalCommission, totals.currency)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {formatCurrency(totals.totalExpenses, totals.currency)}
-                  </TableCell>
-                  <TableCell
-                    className={`text-right ${totals.totalNetProfit < 0 ? "text-destructive" : ""}`}
-                  >
-                    {formatCurrency(totals.totalNetProfit, totals.currency)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableFooter>
-          </Table>
-        )}
-      </CardContent>
-    </Card>
   )
 }
 

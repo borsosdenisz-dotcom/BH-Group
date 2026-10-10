@@ -8,7 +8,6 @@ import {
   ShieldAlert,
   ShieldCheck,
   UserPlus,
-  Wallet,
 } from "lucide-react"
 import {
   Card,
@@ -23,10 +22,7 @@ import { useCurrentUser } from "@/hooks/use-current-user"
 import { useDashboardSummary } from "@/hooks/use-dashboard"
 import { ROLE_LABELS } from "@/lib/roles"
 import { RESERVATION_STATUS_LABELS } from "@/lib/reservation-labels"
-
-function formatCurrency(value: number, currency: string) {
-  return new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 }).format(value) + " " + currency
-}
+import { CommissionSummarySection } from "./commission-summary-section"
 
 export function DashboardOverview() {
   const { data: user, isLoading } = useCurrentUser()
@@ -61,21 +57,9 @@ export function DashboardOverview() {
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-primary/20 bg-primary/5">
-          <CardHeader>
-            <CardDescription className="flex items-center gap-1.5">
-              <Wallet className="size-3.5" /> Venit total
-            </CardDescription>
-            <CardTitle className="text-2xl">
-              {isSummaryLoading || !summary ? (
-                <Skeleton className="h-8 w-32" />
-              ) : (
-                formatCurrency(summary.totalRevenue, summary.currency)
-              )}
-            </CardTitle>
-          </CardHeader>
-        </Card>
+      <CommissionSummarySection />
+
+      <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader>
             <CardDescription className="flex items-center gap-1.5">

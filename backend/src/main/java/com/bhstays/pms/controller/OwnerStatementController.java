@@ -66,7 +66,8 @@ public class OwnerStatementController {
             @RequestParam(required = false) OwnerStatementStatus status,
             HttpServletResponse response) throws IOException {
         CsvWriter.write(response, "deconturi-proprietari.csv",
-                List.of("Proprietar", "Început perioadă", "Sfârșit perioadă", "Venit brut", "Comision",
+                List.of("Proprietar", "Început perioadă", "Sfârșit perioadă", "Metodă calcul", "Încasat",
+                        "Refunduri", "Venit net", "Bază comisionabilă", "Comision BH Stays", "Sumă proprietar",
                         "Cheltuieli", "Net de plată", "Monedă", "Status", "Plătit la"),
                 ownerStatementService.exportRows(ownerId, status));
     }

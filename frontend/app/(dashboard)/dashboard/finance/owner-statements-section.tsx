@@ -39,6 +39,7 @@ import {
   useOwnerStatement,
   useOwnerStatements,
 } from "@/hooks/use-owner-statements"
+import { OwnerStatementBreakdown } from "@/components/finance/owner-statement-breakdown"
 import type { OwnerStatementStatus } from "@/lib/api/types"
 
 function formatCurrency(value: number, currency: string) {
@@ -298,28 +299,7 @@ function StatementDetailDialog({ id, onClose }: { id: string | null; onClose: ()
               </div>
             </div>
 
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Proprietate</TableHead>
-                  <TableHead className="text-right">Venit brut</TableHead>
-                  <TableHead className="text-right">Comision</TableHead>
-                  <TableHead className="text-right">Cheltuieli</TableHead>
-                  <TableHead className="text-right">Net</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {statement.lines.map((line, i) => (
-                  <TableRow key={line.propertyId ?? i}>
-                    <TableCell>{line.propertyName}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(line.grossRevenue, statement.currency)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(line.commissionAmount, statement.currency)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(line.expensesTotal, statement.currency)}</TableCell>
-                    <TableCell className="text-right font-medium">{formatCurrency(line.netAmount, statement.currency)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <OwnerStatementBreakdown statement={statement} />
 
             {statement.paymentReference && (
               <p className="text-xs text-muted-foreground">Referință plată: {statement.paymentReference}</p>

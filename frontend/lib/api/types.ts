@@ -365,6 +365,28 @@ export interface MaintenanceTicketResponse {
 // Owner portal
 // ---------------------------------------------------------------------------
 
+/**
+ * An owner's money in one currency, on the statement formula (transaction
+ * dated): ownerAmount = netRevenue - bhStaysCommission, netPayout =
+ * ownerAmount - expensesTotal. `commissionPercents` are the reservations'
+ * snapshotted percents. Money of reservations without a verifiable
+ * snapshot is not commissioned and counted in `unallocated*`.
+ */
+export interface OwnerRevenueLine {
+  currency: string
+  capturedTotal: number
+  refundedTotal: number
+  netRevenue: number
+  commissionableBase: number
+  commissionPercents: number[]
+  bhStaysCommission: number
+  ownerAmount: number
+  netPayout: number
+  expensesTotal: number
+  unallocatedNetRevenue: number
+  unallocatedReservationCount: number
+}
+
 export interface OwnerPropertyResponse {
   id: string
   name: string
@@ -376,22 +398,33 @@ export interface OwnerPropertyResponse {
   maxGuests: number
   commissionPercent: number | null
   coverPhotoUrl: string | null
-  grossRevenue: number
-  commissionAmount: number
-  netRevenue: number
-  currency: string
+  /** @deprecated only currency's value, null with several; use revenueByCurrency. */
+  grossRevenue: number | null
+  /** @deprecated only currency's value, null with several; use revenueByCurrency. */
+  commissionAmount: number | null
+  /** @deprecated only currency's value, null with several; use revenueByCurrency. */
+  netRevenue: number | null
+  /** @deprecated code of the only currency, null otherwise. */
+  currency: string | null
   documents: PropertyDocumentResponse[]
+  revenueByCurrency: OwnerRevenueLine[]
 }
 
 export interface OwnerDashboardSummaryResponse {
   totalProperties: number
-  grossRevenue: number
-  commissionAmount: number
-  expensesTotal: number
-  netRevenue: number
-  currency: string
+  /** @deprecated only currency's value, null with several; use revenueByCurrency. */
+  grossRevenue: number | null
+  /** @deprecated only currency's value, null with several; use revenueByCurrency. */
+  commissionAmount: number | null
+  /** @deprecated only currency's value, null with several; use revenueByCurrency. */
+  expensesTotal: number | null
+  /** @deprecated only currency's value, null with several; use revenueByCurrency. */
+  netRevenue: number | null
+  /** @deprecated code of the only currency, null otherwise. */
+  currency: string | null
   upcomingReservations: ReservationResponse[]
   openMaintenanceTickets: MaintenanceTicketResponse[]
+  revenueByCurrency: OwnerRevenueLine[]
 }
 
 // ---------------------------------------------------------------------------
@@ -400,6 +433,15 @@ export interface OwnerDashboardSummaryResponse {
 
 export type OwnerStatementStatus = "ISSUED" | "PAID"
 
+/**
+ * CAPTURED_ACCOMMODATION: captured payments minus refunds, commission on
+ * accommodation only (the same figures as the reports). LEGACY_GROSS:
+ * issued before that, commission on the whole net amount; the extra fields
+ * are null.
+ */
+export type OwnerStatementCalculationMethod = "CAPTURED_ACCOMMODATION" | "LEGACY_GROSS"
+
+/** grossRevenue is the net collected revenue (captured - refunds). */
 export interface OwnerStatementLineResponse {
   propertyId: string | null
   propertyName: string
@@ -407,6 +449,13 @@ export interface OwnerStatementLineResponse {
   commissionAmount: number
   expensesTotal: number
   netAmount: number
+  capturedTotal: number | null
+  refundedTotal: number | null
+  commissionableBase: number | null
+  commissionPercent: number | null
+  ownerAmount: number | null
+  unallocatedNetRevenue: number | null
+  unallocatedReservationCount: number | null
 }
 
 export interface OwnerStatementResponse {
@@ -426,6 +475,13 @@ export interface OwnerStatementResponse {
   paymentReference: string | null
   createdAt: string
   lines: OwnerStatementLineResponse[]
+  calculationMethod: OwnerStatementCalculationMethod
+  capturedTotal: number | null
+  refundedTotal: number | null
+  commissionableBase: number | null
+  ownerAmount: number | null
+  unallocatedNetRevenue: number | null
+  unallocatedReservationCount: number | null
 }
 
 export interface OwnerStatementSummaryResponse {
@@ -653,14 +709,23 @@ export interface LeadResponse {
 // Admin dashboard summary
 // ---------------------------------------------------------------------------
 
+export interface CurrencyAmount {
+  currency: string
+  amount: number
+}
+
 export interface DashboardSummaryResponse {
   totalProperties: number
   totalReservations: number
-  totalRevenue: number
-  currency: string
+  /** @deprecated only currency's value, null with several; use totalRevenueByCurrency. */
+  totalRevenue: number | null
+  /** @deprecated code of the only currency, null otherwise. */
+  currency: string | null
   uncontactedLeads: number
   upcomingReservations: ReservationResponse[]
   recentLeads: LeadResponse[]
+  /** Booked value of non-cancelled reservations, one entry per currency - never added together. */
+  totalRevenueByCurrency: CurrencyAmount[]
 }
 
 // ---------------------------------------------------------------------------
@@ -694,28 +759,109 @@ export interface ExpenseResponse {
   createdAt: string
 }
 
+/**
+ * The property report line for the period (transaction dated), plus expenses
+ * (netProfit = netRevenue - expensesTotal). `commissionPercents` are the
+ * reservations' snapshotted percents; `propertyCommissionPercent` is the
+ * current setting, which only applies to new reservations.
+ */
 export interface FinancialReportRowResponse {
   propertyId: string
   propertyName: string
   ownerName: string | null
-  grossRevenue: number
-  commissionAmount: number
+  currency: string
+  capturedTotal: number
+  refundedTotal: number
+  netRevenue: number
+  commissionableBase: number
+  commissionPercents: number[]
+  propertyCommissionPercent: number | null
+  bhStaysRevenue: number
+  ownerAmount: number
+  unallocatedNetRevenue: number
+  unallocatedReservationCount: number
   expensesTotal: number
   netProfit: number
-  currency: string
+  /** @deprecated same as netRevenue. */
+  grossRevenue: number
+  /** @deprecated same as bhStaysRevenue. */
+  commissionAmount: number
 }
 
+/** `revenue` is exactly the dashboard's totals for the same period and currency. */
 export interface FinancialReportCurrencyTotals {
   currency: string
-  totalGrossRevenue: number
-  totalCommission: number
+  revenue: CommissionSummaryCurrencyTotals
   totalExpenses: number
   totalNetProfit: number
+  /** @deprecated same as revenue.propertiesNetRevenue. */
+  totalGrossRevenue: number
+  /** @deprecated same as revenue.bhStaysRevenue. */
+  totalCommission: number
 }
 
 export interface FinancialReportSummaryResponse {
   rows: FinancialReportRowResponse[]
   totals: FinancialReportCurrencyTotals[]
+}
+
+/**
+ * One property's money movements in one currency in a period: captures by
+ * capture date, refunds by refund date (a later refund is a negative
+ * adjustment of its own period). Each reservation is commissioned at the
+ * percent snapshotted when it was created (`commissionPercents` lists them);
+ * reservations without a verifiable snapshot stay in the net revenue, are
+ * not commissioned and are counted in `unallocated*`.
+ * ownerAmount = netRevenue - bhStaysRevenue.
+ */
+export interface PropertyCommissionCurrency {
+  currency: string
+  capturedTotal: number
+  refundedTotal: number
+  netRevenue: number
+  commissionableBase: number
+  commissionPercents: number[]
+  bhStaysRevenue: number
+  ownerAmount: number
+  unallocatedNetRevenue: number
+  unallocatedReservationCount: number
+  reservationCount: number
+}
+
+export interface PropertyCommissionReportResponse {
+  propertyId: string
+  propertyName: string
+  from: string | null
+  to: string | null
+  /** The property's current setting - applies to reservations created from now on. */
+  commissionPercent: number | null
+  commissionConfigured: boolean
+  currencies: PropertyCommissionCurrency[]
+}
+
+/** propertiesNetRevenue = bhStaysRevenue + ownersAmount */
+export interface CommissionSummaryCurrencyTotals {
+  currency: string
+  capturedTotal: number
+  refundedTotal: number
+  propertiesNetRevenue: number
+  bhStaysRevenue: number
+  ownersAmount: number
+  includedPropertyCount: number
+  unallocatedNetRevenue: number
+  unallocatedReservationCount: number
+}
+
+export interface UnconfiguredProperty {
+  propertyId: string
+  propertyName: string
+}
+
+export interface CommissionSummaryResponse {
+  from: string | null
+  to: string | null
+  totals: CommissionSummaryCurrencyTotals[]
+  unconfiguredProperties: UnconfiguredProperty[]
 }
 
 // ---------------------------------------------------------------------------

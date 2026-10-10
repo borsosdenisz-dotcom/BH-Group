@@ -53,4 +53,26 @@ public class OwnerStatementLine extends BaseEntity {
 
     @Column(name = "net_amount", nullable = false)
     private BigDecimal netAmount;
+
+    /** Null on lines of LEGACY_GROSS statements; see {@link OwnerStatement#getCalculationMethod()}. */
+    @Column(name = "captured_total")
+    private BigDecimal capturedTotal;
+
+    @Column(name = "refunded_total")
+    private BigDecimal refundedTotal;
+
+    @Column(name = "commissionable_base")
+    private BigDecimal commissionableBase;
+
+    @Column(name = "commission_percent")
+    private BigDecimal commissionPercent;
+
+    @Column(name = "owner_amount")
+    private BigDecimal ownerAmount;
+
+    @Column(name = "unallocated_net_revenue")
+    private BigDecimal unallocatedNetRevenue;
+
+    @Column(name = "unallocated_reservation_count")
+    private Integer unallocatedReservationCount;
 }

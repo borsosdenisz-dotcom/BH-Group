@@ -30,7 +30,14 @@ public class OwnerStatementMapper {
                 statement.getPaidAt(),
                 statement.getPaymentReference(),
                 statement.getCreatedAt(),
-                lines.stream().map(this::toLineResponse).toList());
+                lines.stream().map(this::toLineResponse).toList(),
+                statement.getCalculationMethod(),
+                statement.getCapturedTotal(),
+                statement.getRefundedTotal(),
+                statement.getCommissionableBase(),
+                statement.getOwnerAmount(),
+                statement.getUnallocatedNetRevenue(),
+                statement.getUnallocatedReservationCount());
     }
 
     public OwnerStatementSummaryResponse toSummaryResponse(OwnerStatement statement) {
@@ -54,7 +61,14 @@ public class OwnerStatementMapper {
                 line.getGrossRevenue(),
                 line.getCommissionAmount(),
                 line.getExpensesTotal(),
-                line.getNetAmount());
+                line.getNetAmount(),
+                line.getCapturedTotal(),
+                line.getRefundedTotal(),
+                line.getCommissionableBase(),
+                line.getCommissionPercent(),
+                line.getOwnerAmount(),
+                line.getUnallocatedNetRevenue(),
+                line.getUnallocatedReservationCount());
     }
 
     private String fullName(String firstName, String lastName) {

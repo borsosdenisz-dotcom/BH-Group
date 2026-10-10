@@ -22,9 +22,9 @@ import com.bhstays.pms.service.mapper.OwnerStatementMapper;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -37,9 +37,14 @@ import org.springframework.transaction.annotation.Transactional;
  * Generation is a one-shot, explicit admin action - not a live recomputed
  * view - because a statement is a record of what was owed for a period,
  * and that must stay stable even if payments/expenses for the period are
- * edited afterwards. Re-generating the exact same owner+currency+period is
- * rejected (see {@link #generate}) rather than silently producing a second,
- * conflicting record.
+ * edited afterwards. Its figures are the transaction-dated movements of
+ * the period (see {@link PropertyCommissionReportService}): a refund made
+ * after a statement was issued never changes it - it appears, with the
+ * matching commission reduction, in the statement of the period in which
+ * the refund was made. A period that overlaps one already issued for the
+ * same owner and currency (the exact same period included) is rejected
+ * (see {@link #generate}): the shared days' transactions would otherwise be
+ * counted in two statements.
  */
 @Service
 @RequiredArgsConstructor
@@ -62,41 +67,54 @@ public class OwnerStatementService {
                 .filter(u -> u.getRole() == Role.OWNER)
                 .orElseThrow(() -> new BadRequestException("Proprietarul nu a fost găsit"));
 
-        var financials = ownerFinancialsService.computeForOwner(ownerId, periodStart, periodEnd);
-        Map<String, List<OwnerFinancialsService.PropertyFinancials>> byCurrency = financials.stream()
-                .filter(f -> f.grossRevenue().signum() != 0 || f.expensesTotal().signum() != 0)
-                .collect(Collectors.groupingBy(OwnerFinancialsService.PropertyFinancials::currency, LinkedHashMap::new, Collectors.toList()));
-
-        if (byCurrency.isEmpty()) {
+        var financials = ownerFinancialsService.computeForOwner(ownerId, periodStart, periodEnd).stream()
+                .filter(OwnerFinancialsService.PropertyFinancials::hasActivity)
+                .toList();
+        if (financials.isEmpty()) {
             throw new BadRequestException("Nicio activitate financiară găsită pentru acest proprietar în perioada selectată");
         }
+
+        // One statement per currency - a statement never mixes currencies.
+        Map<String, List<OwnerFinancialsService.PropertyFinancials>> byCurrency = financials.stream()
+                .collect(Collectors.groupingBy(OwnerFinancialsService.PropertyFinancials::currency, TreeMap::new,
+                        Collectors.toList()));
 
         List<OwnerStatementResponse> results = new java.util.ArrayList<>();
         for (var entry : byCurrency.entrySet()) {
             String currency = entry.getKey();
             List<OwnerFinancialsService.PropertyFinancials> rows = entry.getValue();
 
-            if (ownerStatementRepository.findByOwnerIdAndCurrencyAndPeriodStartAndPeriodEnd(
-                    ownerId, currency, periodStart, periodEnd).isPresent()) {
+            // Overlapping periods would count the same transactions in two statements.
+            var overlapping = ownerStatementRepository.findOverlapping(ownerId, currency, periodStart, periodEnd);
+            if (overlapping.isPresent()) {
                 throw new ConflictException(
                         "Există deja un decont " + currency + " pentru " + owner.getFirstName() + " " + owner.getLastName()
-                                + " în perioada " + periodStart + " - " + periodEnd);
+                                + " în perioada " + overlapping.get().getPeriodStart() + " - "
+                                + overlapping.get().getPeriodEnd() + ", care se suprapune cu perioada aleasă");
             }
 
-            BigDecimal grossRevenue = sum(rows, OwnerFinancialsService.PropertyFinancials::grossRevenue);
-            BigDecimal commissionAmount = sum(rows, OwnerFinancialsService.PropertyFinancials::commissionAmount);
+            BigDecimal commissionAmount = sum(rows, OwnerFinancialsService.PropertyFinancials::bhStaysCommission);
+            BigDecimal ownerAmount = sum(rows, OwnerFinancialsService.PropertyFinancials::ownerAmount);
             BigDecimal expensesTotal = sum(rows, OwnerFinancialsService.PropertyFinancials::expensesTotal);
-            BigDecimal netPayout = grossRevenue.subtract(commissionAmount).subtract(expensesTotal);
+            BigDecimal netPayout = ownerAmount.subtract(expensesTotal);
 
             OwnerStatement statement = OwnerStatement.builder()
                     .owner(owner)
                     .periodStart(periodStart)
                     .periodEnd(periodEnd)
                     .currency(currency)
-                    .grossRevenue(grossRevenue)
+                    .calculationMethod(OwnerStatement.CALCULATION_CAPTURED_ACCOMMODATION)
+                    .capturedTotal(sum(rows, OwnerFinancialsService.PropertyFinancials::capturedTotal))
+                    .refundedTotal(sum(rows, OwnerFinancialsService.PropertyFinancials::refundedTotal))
+                    .grossRevenue(sum(rows, OwnerFinancialsService.PropertyFinancials::netRevenue))
+                    .commissionableBase(sum(rows, OwnerFinancialsService.PropertyFinancials::commissionableBase))
                     .commissionAmount(commissionAmount)
+                    .ownerAmount(ownerAmount)
                     .expensesTotal(expensesTotal)
                     .netPayout(netPayout)
+                    .unallocatedNetRevenue(sum(rows, OwnerFinancialsService.PropertyFinancials::unallocatedNetRevenue))
+                    .unallocatedReservationCount(rows.stream()
+                            .mapToInt(OwnerFinancialsService.PropertyFinancials::unallocatedReservationCount).sum())
                     .status(OwnerStatementStatus.ISSUED)
                     .generatedBy(actor)
                     .build();
@@ -105,14 +123,22 @@ public class OwnerStatementService {
             List<OwnerStatementLine> lines = new java.util.ArrayList<>();
             for (var row : rows) {
                 Property property = propertyRepository.findById(row.propertyId()).orElse(null);
+                BigDecimal lineOwnerAmount = row.ownerAmount();
                 lines.add(ownerStatementLineRepository.save(OwnerStatementLine.builder()
                         .statement(statement)
                         .property(property)
                         .propertyName(row.propertyName())
-                        .grossRevenue(row.grossRevenue())
-                        .commissionAmount(row.commissionAmount())
+                        .capturedTotal(row.capturedTotal())
+                        .refundedTotal(row.refundedTotal())
+                        .grossRevenue(row.netRevenue())
+                        .commissionableBase(row.commissionableBase())
+                        .commissionPercent(row.singleCommissionPercent())
+                        .commissionAmount(row.bhStaysCommission())
+                        .ownerAmount(lineOwnerAmount)
                         .expensesTotal(row.expensesTotal())
-                        .netAmount(row.netPayout())
+                        .netAmount(lineOwnerAmount.subtract(row.expensesTotal()))
+                        .unallocatedNetRevenue(row.unallocatedNetRevenue())
+                        .unallocatedReservationCount(row.unallocatedReservationCount())
                         .build()));
             }
 
@@ -184,8 +210,13 @@ public class OwnerStatementService {
                         s.getOwner().getFirstName() + " " + s.getOwner().getLastName(),
                         s.getPeriodStart().toString(),
                         s.getPeriodEnd().toString(),
+                        s.getCalculationMethod(),
+                        s.getCapturedTotal() != null ? s.getCapturedTotal().toString() : "",
+                        s.getRefundedTotal() != null ? s.getRefundedTotal().toString() : "",
                         s.getGrossRevenue().toString(),
+                        s.getCommissionableBase() != null ? s.getCommissionableBase().toString() : "",
                         s.getCommissionAmount().toString(),
+                        s.getOwnerAmount() != null ? s.getOwnerAmount().toString() : "",
                         s.getExpensesTotal().toString(),
                         s.getNetPayout().toString(),
                         s.getCurrency(),

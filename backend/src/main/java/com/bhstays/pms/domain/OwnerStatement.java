@@ -32,6 +32,10 @@ import org.hibernate.type.SqlTypes;
 @EqualsAndHashCode(callSuper = true)
 public class OwnerStatement extends BaseEntity {
 
+    public static final String CALCULATION_LEGACY_GROSS = "LEGACY_GROSS";
+    /** Captured payments minus refunds; commission on the accommodation part only. */
+    public static final String CALCULATION_CAPTURED_ACCOMMODATION = "CAPTURED_ACCOMMODATION";
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
@@ -57,6 +61,34 @@ public class OwnerStatement extends BaseEntity {
 
     @Column(name = "net_payout", nullable = false)
     private BigDecimal netPayout;
+
+    /**
+     * How the figures were computed. {@code LEGACY_GROSS} statements (issued
+     * before V40) took the commission on the whole net amount and have none
+     * of the fields below; they are kept exactly as issued.
+     */
+    @Column(name = "calculation_method", nullable = false)
+    @Builder.Default
+    private String calculationMethod = CALCULATION_LEGACY_GROSS;
+
+    @Column(name = "captured_total")
+    private BigDecimal capturedTotal;
+
+    @Column(name = "refunded_total")
+    private BigDecimal refundedTotal;
+
+    @Column(name = "commissionable_base")
+    private BigDecimal commissionableBase;
+
+    /** Net revenue minus BH Stays commission, before owner-chargeable expenses. */
+    @Column(name = "owner_amount")
+    private BigDecimal ownerAmount;
+
+    @Column(name = "unallocated_net_revenue")
+    private BigDecimal unallocatedNetRevenue;
+
+    @Column(name = "unallocated_reservation_count")
+    private Integer unallocatedReservationCount;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)

@@ -4,6 +4,9 @@ import com.bhstays.pms.domain.CancellationPolicy;
 import com.bhstays.pms.domain.Facility;
 import com.bhstays.pms.domain.PropertyType;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -67,6 +70,9 @@ public record PropertyCreateRequest(
 
         UUID ownerId,
 
+        @DecimalMin(value = "0.00", message = "Commission must be between 0 and 100")
+        @DecimalMax(value = "100.00", message = "Commission must be between 0 and 100")
+        @Digits(integer = 3, fraction = 2, message = "Commission can have at most two decimals")
         BigDecimal commissionPercent,
 
         java.util.List<String> cleaningChecklist,

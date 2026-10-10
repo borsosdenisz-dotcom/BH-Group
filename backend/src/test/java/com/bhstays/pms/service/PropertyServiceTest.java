@@ -5,7 +5,9 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -143,5 +145,59 @@ class PropertyServiceTest {
                 false, null, null,
                 // lateCheckoutEnabled, lateCheckoutTime, lateCheckoutFee
                 lateCheckoutEnabled, lateCheckoutTime, lateCheckoutFee);
+    }
+
+    // ------------------------------------------------------------------
+    // BH Stays management commission
+    // ------------------------------------------------------------------
+
+    @Test
+    void updateCommission_storesTwoDecimalsAndAuditsOnlyThePercentages() {
+        property.setCommissionPercent(new BigDecimal("20.00"));
+
+        propertyService.updateCommission(property.getId(), new BigDecimal("17.5"));
+
+        assertThat(property.getCommissionPercent()).isEqualByComparingTo("17.50");
+        assertThat(property.getCommissionPercent().scale()).isEqualTo(2);
+        verify(auditService).recordEntityChange(eq(AuditAction.PROPERTY_COMMISSION_CHANGED), eq("Property"),
+                eq(property.getId()), isNull(), isNull(), eq("Management commission: 20.00% -> 17.50%"));
+    }
+
+    @Test
+    void updateCommission_acceptsTheBoundsAndNull() {
+        propertyService.updateCommission(property.getId(), new BigDecimal("0"));
+        assertThat(property.getCommissionPercent()).isEqualByComparingTo("0.00");
+
+        propertyService.updateCommission(property.getId(), new BigDecimal("100"));
+        assertThat(property.getCommissionPercent()).isEqualByComparingTo("100.00");
+
+        propertyService.updateCommission(property.getId(), null);
+        assertThat(property.getCommissionPercent()).isNull();
+        verify(auditService).recordEntityChange(eq(AuditAction.PROPERTY_COMMISSION_CHANGED), eq("Property"),
+                eq(property.getId()), isNull(), isNull(), eq("Management commission: 100.00% -> not configured"));
+    }
+
+    @Test
+    void updateCommission_rejectsValuesOutsideZeroToHundredOrWithMoreThanTwoDecimals() {
+        property.setCommissionPercent(new BigDecimal("20.00"));
+
+        assertThatThrownBy(() -> propertyService.updateCommission(property.getId(), new BigDecimal("-0.01")))
+                .isInstanceOf(BadRequestException.class);
+        assertThatThrownBy(() -> propertyService.updateCommission(property.getId(), new BigDecimal("100.01")))
+                .isInstanceOf(BadRequestException.class);
+        assertThatThrownBy(() -> propertyService.updateCommission(property.getId(), new BigDecimal("12.345")))
+                .isInstanceOf(BadRequestException.class);
+
+        assertThat(property.getCommissionPercent()).isEqualByComparingTo("20.00");
+        verify(auditService, never()).recordEntityChange(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void updateCommission_withTheSameValueIsNotAudited() {
+        property.setCommissionPercent(new BigDecimal("20.00"));
+
+        propertyService.updateCommission(property.getId(), new BigDecimal("20"));
+
+        verify(auditService, never()).recordEntityChange(any(), any(), any(), any(), any(), any());
     }
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { formatMoney } from "@/lib/commission"
 import Link from "next/link"
 import { MapPin } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -9,10 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { DataPagination } from "@/components/ui/data-pagination"
 import { useOwnerProperties } from "@/hooks/use-owner"
 import { PROPERTY_STATUS_BADGE_VARIANT, PROPERTY_STATUS_LABELS } from "@/lib/property-labels"
-
-function formatCurrency(value: number, currency: string) {
-  return new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 }).format(value) + " " + currency
-}
 
 export function OwnerPropertiesView() {
   const [page, setPage] = useState(0)
@@ -64,11 +61,19 @@ export function OwnerPropertiesView() {
                       <MapPin className="size-3" />
                       {property.address.city}
                     </p>
-                    <div className="mt-2 flex items-center justify-between border-t pt-2 text-sm">
-                      <span className="text-muted-foreground">Venit net</span>
-                      <span className="font-medium">
-                        {formatCurrency(property.netRevenue, property.currency)}
-                      </span>
+                    <div className="mt-2 flex flex-col gap-1 border-t pt-2 text-sm">
+                      {property.revenueByCurrency.length === 0 ? (
+                        <span className="text-muted-foreground">Nicio încasare încă</span>
+                      ) : (
+                        property.revenueByCurrency.map((line) => (
+                          <div key={line.currency} className="flex items-center justify-between">
+                            <span className="text-muted-foreground">Sumă proprietar ({line.currency})</span>
+                            <span className="font-medium">
+                              {formatMoney(line.ownerAmount, line.currency)}
+                            </span>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </CardContent>
                 </Card>

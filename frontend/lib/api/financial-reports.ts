@@ -1,5 +1,14 @@
 import { apiClient } from "@/lib/api/client"
-import type { FinancialReportSummaryResponse } from "@/lib/api/types"
+import type {
+  CommissionSummaryResponse,
+  FinancialReportSummaryResponse,
+  PropertyCommissionReportResponse,
+} from "@/lib/api/types"
+
+export interface ReportPeriod {
+  from?: string
+  to?: string
+}
 
 export interface FinancialReportParams {
   propertyId?: string
@@ -20,5 +29,15 @@ export const financialReportsApi = {
   summary: (params: FinancialReportParams = {}) =>
     apiClient.get<FinancialReportSummaryResponse>(
       `/reports/financial/summary${buildQuery({ propertyId: params.propertyId, from: params.from, to: params.to })}`
+    ),
+
+  propertyCommission: (propertyId: string, period: ReportPeriod = {}) =>
+    apiClient.get<PropertyCommissionReportResponse>(
+      `/reports/financial/properties/${propertyId}/commission${buildQuery({ from: period.from, to: period.to })}`
+    ),
+
+  commissionSummary: (period: ReportPeriod = {}) =>
+    apiClient.get<CommissionSummaryResponse>(
+      `/reports/financial/commission-summary${buildQuery({ from: period.from, to: period.to })}`
     ),
 }

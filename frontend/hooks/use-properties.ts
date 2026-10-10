@@ -80,6 +80,23 @@ export function useUpdateIntegrationMode(id: string) {
   })
 }
 
+export function useUpdateManagementCommission(id: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (commissionPercent: number | null) => propertiesApi.updateManagementCommission(id, commissionPercent),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["property", id] })
+      queryClient.invalidateQueries({ queryKey: ["property-commission-report", id] })
+      queryClient.invalidateQueries({ queryKey: ["commission-summary"] })
+      toast.success("Comision de administrare actualizat")
+    },
+    onError: (error) => {
+      toast.error(errorMessage(error, "Actualizarea comisionului a eșuat"))
+    },
+  })
+}
+
 export function useDeleteProperty() {
   const router = useRouter()
   const queryClient = useQueryClient()

@@ -110,6 +110,7 @@ public class StripeCheckoutService {
             reservation.setTotalAmount(amount);
         }
         reservation.setCurrency(currency);
+        ReservationPriceSnapshot.apply(reservation, quote);
 
         Payment payment = paymentService.startOnlineCardPayment(reservation, amount, currency);
 

@@ -17,6 +17,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.bhstays.pms.domain.Reservation;
 import com.bhstays.pms.domain.ReservationStatus;
+import com.bhstays.pms.dto.dashboard.CurrencyAmountResponse;
 public interface ReservationRepository extends JpaRepository<Reservation, UUID>,
         JpaSpecificationExecutor<Reservation> {
 
@@ -57,8 +58,15 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID>,
 
     long countByStatus(ReservationStatus status);
 
-    @Query("select coalesce(sum(r.totalAmount), 0) from Reservation r where r.status not in :excludedStatuses")
-    BigDecimal sumTotalRevenue(@Param("excludedStatuses") Collection<ReservationStatus> excludedStatuses);
+    @Query("""
+            select new com.bhstays.pms.dto.dashboard.CurrencyAmountResponse(r.currency, sum(r.totalAmount))
+            from Reservation r
+            where r.status not in :excludedStatuses and r.totalAmount is not null
+            group by r.currency
+            order by r.currency
+            """)
+    List<CurrencyAmountResponse> sumTotalRevenueByCurrency(
+            @Param("excludedStatuses") Collection<ReservationStatus> excludedStatuses);
 
     @Query("""
             select coalesce(sum(r.totalAmount), 0) from Reservation r

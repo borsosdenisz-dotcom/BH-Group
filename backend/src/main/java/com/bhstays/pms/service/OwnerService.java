@@ -28,9 +28,14 @@ import com.bhstays.pms.service.mapper.ExpenseMapper;
 import com.bhstays.pms.service.mapper.MaintenanceTicketMapper;
 import com.bhstays.pms.service.mapper.OwnerMapper;
 import com.bhstays.pms.service.mapper.ReservationMapper;
+import com.bhstays.pms.dto.owner.OwnerRevenueLine;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
@@ -68,7 +73,8 @@ public class OwnerService {
     @Transactional(readOnly = true)
     public PageResponse<OwnerPropertyResponse> listMyProperties(UUID ownerId, Pageable pageable) {
         Page<Property> page = propertyRepository.findByOwnerId(ownerId, pageable);
-        return PageResponse.of(page, this::toOwnerPropertyResponse);
+        Map<UUID, List<OwnerRevenueLine>> revenue = revenueByProperty(ownerId);
+        return PageResponse.of(page, property -> toOwnerPropertyResponse(property, revenue));
     }
 
     @Transactional(readOnly = true)
@@ -76,7 +82,7 @@ public class OwnerService {
         Property property = propertyRepository.findById(propertyId)
                 .filter(p -> p.getOwner() != null && p.getOwner().getId().equals(ownerId))
                 .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
-        return toOwnerPropertyResponse(property);
+        return toOwnerPropertyResponse(property, revenueByProperty(ownerId));
     }
 
     @Transactional(readOnly = true)
@@ -96,11 +102,8 @@ public class OwnerService {
     public OwnerDashboardSummaryResponse getMyDashboardSummary(UUID ownerId) {
         var properties = propertyRepository.findByOwnerId(ownerId);
 
-        var financials = ownerFinancialsService.computeForOwner(ownerId, null, null);
-        BigDecimal grossRevenue = sumField(financials, OwnerFinancialsService.PropertyFinancials::grossRevenue);
-        BigDecimal commissionAmount = sumField(financials, OwnerFinancialsService.PropertyFinancials::commissionAmount);
-        BigDecimal expensesTotal = sumField(financials, OwnerFinancialsService.PropertyFinancials::expensesTotal);
-        BigDecimal netRevenue = grossRevenue.subtract(commissionAmount).subtract(expensesTotal);
+        List<OwnerRevenueLine> revenueByCurrency = byCurrency(ownerFinancialsService.computeForOwner(ownerId, null, null));
+        OwnerMapper.LegacyFields legacy = OwnerMapper.LegacyFields.of(revenueByCurrency);
 
         Specification<Reservation> upcomingSpec = ReservationSpecifications.combine(
                 ReservationSpecifications.hasPropertyOwner(ownerId),
@@ -124,8 +127,13 @@ public class OwnerService {
                 .toList();
 
         return new OwnerDashboardSummaryResponse(
-                properties.size(), grossRevenue, commissionAmount, expensesTotal, netRevenue, "RON",
-                upcoming, openTickets);
+                properties.size(),
+                legacy.pick(OwnerRevenueLine::netRevenue),
+                legacy.pick(OwnerRevenueLine::bhStaysCommission),
+                legacy.pick(OwnerRevenueLine::expensesTotal),
+                legacy.pick(OwnerRevenueLine::netPayout),
+                legacy.currency(),
+                upcoming, openTickets, revenueByCurrency);
     }
 
     @Transactional(readOnly = true)
@@ -184,15 +192,30 @@ public class OwnerService {
         return maintenanceTicketMapper.toResponse(ticket, photos);
     }
 
-    private OwnerPropertyResponse toOwnerPropertyResponse(Property property) {
+    private OwnerPropertyResponse toOwnerPropertyResponse(Property property, Map<UUID, List<OwnerRevenueLine>> revenue) {
         var photos = propertyPhotoRepository.findByPropertyIdOrderBySortOrderAsc(property.getId());
         var documents = propertyDocumentRepository.findByPropertyIdOrderByCreatedAtDesc(property.getId());
-        BigDecimal revenue = ownerFinancialsService.sumGrossRevenueForProperty(property.getId(), null, null);
-        return ownerMapper.toResponse(property, photos, revenue, documents);
+        return ownerMapper.toResponse(property, photos, revenue.getOrDefault(property.getId(), List.of()), documents);
     }
 
-    private BigDecimal sumField(List<OwnerFinancialsService.PropertyFinancials> financials,
-                                 java.util.function.Function<OwnerFinancialsService.PropertyFinancials, BigDecimal> extractor) {
-        return financials.stream().map(extractor).reduce(BigDecimal.ZERO, BigDecimal::add);
+    /** All-time figures of every property of the owner, computed once (one query set for the whole page). */
+    private Map<UUID, List<OwnerRevenueLine>> revenueByProperty(UUID ownerId) {
+        Map<UUID, List<OwnerFinancialsService.PropertyFinancials>> rowsByProperty = new LinkedHashMap<>();
+        for (var row : ownerFinancialsService.computeForOwner(ownerId, null, null)) {
+            rowsByProperty.computeIfAbsent(row.propertyId(), id -> new ArrayList<>()).add(row);
+        }
+        Map<UUID, List<OwnerRevenueLine>> result = new LinkedHashMap<>();
+        rowsByProperty.forEach((propertyId, rows) -> result.put(propertyId, byCurrency(rows)));
+        return result;
+    }
+
+    private static List<OwnerRevenueLine> byCurrency(List<OwnerFinancialsService.PropertyFinancials> rows) {
+        Map<String, List<OwnerFinancialsService.PropertyFinancials>> grouped = new TreeMap<>();
+        for (var row : rows) {
+            grouped.computeIfAbsent(row.currency(), currency -> new ArrayList<>()).add(row);
+        }
+        return grouped.entrySet().stream()
+                .map(entry -> OwnerFinancialsService.aggregate(entry.getKey(), entry.getValue()))
+                .toList();
     }
 }

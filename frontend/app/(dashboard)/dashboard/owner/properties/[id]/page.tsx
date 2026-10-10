@@ -1,6 +1,7 @@
 "use client"
 
 import { use } from "react"
+import { OwnerRevenueLines } from "@/components/finance/owner-revenue-lines"
 import Link from "next/link"
 import { ArrowLeft, Bath, BedDouble, MapPin, Users } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -9,10 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { DocumentList } from "@/components/properties/document-list"
 import { useOwnerProperty } from "@/hooks/use-owner"
 import { PROPERTY_STATUS_BADGE_VARIANT, PROPERTY_STATUS_LABELS } from "@/lib/property-labels"
-
-function formatCurrency(value: number, currency: string) {
-  return new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 }).format(value) + " " + currency
-}
 
 export default function OwnerPropertyDetailPage({
   params,
@@ -77,23 +74,10 @@ export default function OwnerPropertyDetailPage({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Venituri</CardTitle>
+          <CardTitle className="text-base">Încasări (toate rezervările)</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
-          <div className="flex items-center justify-between rounded-md bg-muted/40 p-3 sm:col-span-2">
-            <span className="text-muted-foreground">Venit brut (toate rezervările)</span>
-            <span className="font-medium">{formatCurrency(property.grossRevenue, property.currency)}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">
-              Comision BH Stays{property.commissionPercent != null ? ` (${property.commissionPercent}%)` : ""}
-            </span>
-            <span>-{formatCurrency(property.commissionAmount, property.currency)}</span>
-          </div>
-          <div className="flex items-center justify-between font-medium">
-            <span>Venit net</span>
-            <span>{formatCurrency(property.netRevenue, property.currency)}</span>
-          </div>
+        <CardContent>
+          <OwnerRevenueLines lines={property.revenueByCurrency} showPayout={false} />
         </CardContent>
       </Card>
 

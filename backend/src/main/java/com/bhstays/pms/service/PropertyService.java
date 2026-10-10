@@ -19,6 +19,10 @@ import com.bhstays.pms.service.mapper.SeasonalRateMapper;
 import com.bhstays.pms.domain.Role;
 import com.bhstays.pms.domain.User;
 import com.bhstays.pms.repository.UserRepository;
+import com.bhstays.pms.security.SecurityUtils;
+import com.bhstays.pms.security.UserPrincipal;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -48,6 +52,7 @@ import com.bhstays.pms.service.mapper.PropertyMapper;
 public class PropertyService {
 
     private static final int DOCUMENT_EXPIRY_WARNING_DAYS = 30;
+    private static final BigDecimal MAX_COMMISSION_PERCENT = new BigDecimal("100.00");
 
     private final PropertyRepository propertyRepository;
     private final PropertyPhotoRepository propertyPhotoRepository;
@@ -133,7 +138,7 @@ public class PropertyService {
                 .cancellationPolicy(request.cancellationPolicy() != null
                         ? request.cancellationPolicy() : com.bhstays.pms.domain.CancellationPolicy.MODERATE)
                 .owner(resolveOwner(request.ownerId()))
-                .commissionPercent(request.commissionPercent())
+                .commissionPercent(normalizeCommissionPercent(request.commissionPercent()))
                 .cleaningChecklist(request.cleaningChecklist() != null
                         ? new java.util.ArrayList<>(request.cleaningChecklist()) : new java.util.ArrayList<>())
                 .checkInTime(request.checkInTime() != null ? request.checkInTime() : java.time.LocalTime.of(14, 0))
@@ -148,6 +153,9 @@ public class PropertyService {
                 .build();
 
         property = propertyRepository.save(property);
+        if (property.getCommissionPercent() != null) {
+            auditCommissionChange(property, null);
+        }
         return toFullResponse(property);
     }
 
@@ -176,7 +184,8 @@ public class PropertyService {
         property.setMaxStayNights(request.maxStayNights());
         if (request.cancellationPolicy() != null) property.setCancellationPolicy(request.cancellationPolicy());
         property.setOwner(resolveOwner(request.ownerId()));
-        property.setCommissionPercent(request.commissionPercent());
+        BigDecimal previousCommission = property.getCommissionPercent();
+        property.setCommissionPercent(normalizeCommissionPercent(request.commissionPercent()));
         property.setCleaningChecklist(request.cleaningChecklist() != null
                 ? new java.util.ArrayList<>(request.cleaningChecklist()) : new java.util.ArrayList<>());
         if (request.checkInTime() != null) property.setCheckInTime(request.checkInTime());
@@ -192,7 +201,61 @@ public class PropertyService {
         property.setLateCheckoutFee(request.lateCheckoutFee());
 
         property = propertyRepository.save(property);
+        if (commissionChanged(previousCommission, property.getCommissionPercent())) {
+            auditCommissionChange(property, previousCommission);
+        }
         return toFullResponse(property);
+    }
+
+    /**
+     * Sets (or, with null, clears) the BH Stays management commission. It
+     * takes effect on the next report - nothing is stored per payment - so
+     * changing it re-prices every period reported afterwards.
+     */
+    @Transactional
+    public PropertyResponse updateCommission(UUID id, BigDecimal commissionPercent) {
+        Property property = findPropertyOrThrow(id);
+        BigDecimal previous = property.getCommissionPercent();
+        property.setCommissionPercent(normalizeCommissionPercent(commissionPercent));
+        property = propertyRepository.save(property);
+        if (commissionChanged(previous, property.getCommissionPercent())) {
+            auditCommissionChange(property, previous);
+        }
+        return toFullResponse(property);
+    }
+
+    /** Same rule as the request validation and the DB CHECK, for callers that bypass the controller. */
+    private BigDecimal normalizeCommissionPercent(BigDecimal percent) {
+        if (percent == null) {
+            return null;
+        }
+        if (percent.signum() < 0 || percent.compareTo(MAX_COMMISSION_PERCENT) > 0) {
+            throw new BadRequestException("Commission must be between 0 and 100");
+        }
+        if (percent.stripTrailingZeros().scale() > 2) {
+            throw new BadRequestException("Commission can have at most two decimals");
+        }
+        return percent.setScale(2, RoundingMode.UNNECESSARY);
+    }
+
+    private static boolean commissionChanged(BigDecimal before, BigDecimal after) {
+        if (before == null || after == null) {
+            return before != after;
+        }
+        return before.compareTo(after) != 0;
+    }
+
+    /** Only the percentages are recorded - no owner, guest or revenue data. */
+    private void auditCommissionChange(Property property, BigDecimal previous) {
+        UserPrincipal actor = SecurityUtils.getCurrentPrincipal().orElse(null);
+        auditService.recordEntityChange(AuditAction.PROPERTY_COMMISSION_CHANGED, "Property", property.getId(),
+                actor != null ? actor.getId() : null, actor != null ? actor.getEmail() : null,
+                "Management commission: " + describePercent(previous) + " -> "
+                        + describePercent(property.getCommissionPercent()));
+    }
+
+    private static String describePercent(BigDecimal percent) {
+        return percent != null ? percent.toPlainString() + "%" : "not configured";
     }
 
     /**

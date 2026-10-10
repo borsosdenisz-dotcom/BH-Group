@@ -111,6 +111,10 @@ export const propertiesApi = {
   updateIntegrationMode: (id: string, mode: IntegrationMode) =>
     apiClient.patch<PropertyResponse>(`/properties/${id}/integration-mode`, { mode }),
 
+  /** null clears the commission back to "not configured". */
+  updateManagementCommission: (id: string, commissionPercent: number | null) =>
+    apiClient.patch<PropertyResponse>(`/properties/${id}/management-commission`, { commissionPercent }),
+
   uploadPhoto: (id: string, file: File, caption?: string) => {
     const formData = new FormData()
     formData.set("file", file)

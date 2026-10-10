@@ -7,20 +7,9 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { OwnerStatementBreakdown } from "@/components/finance/owner-statement-breakdown"
 import { useMyOwnerStatement } from "@/hooks/use-owner-statements"
 import type { OwnerStatementStatus } from "@/lib/api/types"
-
-function formatCurrency(value: number, currency: string) {
-  return new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 2 }).format(value) + " " + currency
-}
 
 const STATUS_LABELS: Record<OwnerStatementStatus, string> = {
   ISSUED: "Emis",
@@ -74,61 +63,16 @@ export default function OwnerStatementDetailPage({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Rezumat</CardTitle>
+          <CardTitle className="text-base">Decont {statement.currency}</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
-          <div className="flex items-center justify-between rounded-md bg-muted/40 p-3 sm:col-span-2">
-            <span className="text-muted-foreground">Venit brut</span>
-            <span className="font-medium">{formatCurrency(statement.grossRevenue, statement.currency)}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Comision BH Stays</span>
-            <span>-{formatCurrency(statement.commissionAmount, statement.currency)}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Cheltuieli facturate</span>
-            <span>-{formatCurrency(statement.expensesTotal, statement.currency)}</span>
-          </div>
-          <div className="flex items-center justify-between text-base font-medium sm:col-span-2">
-            <span>Net de plată</span>
-            <span>{formatCurrency(statement.netPayout, statement.currency)}</span>
-          </div>
+        <CardContent className="flex flex-col gap-3">
+          <OwnerStatementBreakdown statement={statement} />
           {statement.paymentReference && (
-            <p className="text-xs text-muted-foreground sm:col-span-2">
+            <p className="text-xs text-muted-foreground">
               Referință plată: {statement.paymentReference}
               {statement.paidAt ? ` · ${statement.paidAt.slice(0, 10)}` : ""}
             </p>
           )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Defalcare pe proprietăți</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Proprietate</TableHead>
-                <TableHead className="text-right">Venit brut</TableHead>
-                <TableHead className="text-right">Comision</TableHead>
-                <TableHead className="text-right">Cheltuieli</TableHead>
-                <TableHead className="text-right">Net</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {statement.lines.map((line, i) => (
-                <TableRow key={line.propertyId ?? i}>
-                  <TableCell>{line.propertyName}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(line.grossRevenue, statement.currency)}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(line.commissionAmount, statement.currency)}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(line.expensesTotal, statement.currency)}</TableCell>
-                  <TableCell className="text-right font-medium">{formatCurrency(line.netAmount, statement.currency)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
         </CardContent>
       </Card>
     </div>
