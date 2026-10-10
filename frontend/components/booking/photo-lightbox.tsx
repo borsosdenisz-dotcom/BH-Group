@@ -46,7 +46,12 @@ export function PhotoLightbox({ photos, index, onIndexChange, onClose, propertyN
       <DialogContent
         showCloseButton={false}
         initialFocus={closeButtonRef}
-        className="inset-0 flex h-dvh max-h-none w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-none bg-black p-0 sm:max-w-none sm:rounded-none"
+        overlayClassName="z-50 bg-black/80 supports-backdrop-filter:backdrop-blur-sm"
+        // A panel rather than a full-screen takeover: 80% of the viewport on a
+        // desktop, centred by the base dialog's own transform (which is why
+        // nothing here touches inset or translate). Phones get a little more,
+        // because 80% of a small screen leaves the photo too small to read.
+        className="flex h-[85vh] w-[92vw] max-w-none flex-col gap-0 overflow-hidden rounded-2xl border-none bg-neutral-950 p-0 ring-0 sm:h-[80vh] sm:w-[80vw] sm:max-w-[1400px]"
       >
         <DialogTitle className="sr-only">
           {propertyName} — fotografia {index + 1} din {photos.length}
@@ -57,7 +62,12 @@ export function PhotoLightbox({ photos, index, onIndexChange, onClose, propertyN
             src={photo.url}
             alt={photo.caption || `${propertyName} — fotografia ${index + 1}`}
             fill
-            sizes="100vw"
+            // sizes has to match what the panel actually renders, or Next.js
+            // serves a source scaled for the wrong width and the photo looks
+            // soft. object-contain keeps the whole frame visible - letterboxed
+            // against the panel rather than cropped.
+            sizes="(min-width: 640px) 80vw, 92vw"
+            quality={90}
             className="object-contain"
             priority
           />
@@ -69,7 +79,7 @@ export function PhotoLightbox({ photos, index, onIndexChange, onClose, propertyN
                 type="button"
                 size="icon"
                 variant="ghost"
-                className="absolute right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))] size-11 bg-black/45 text-white hover:bg-black/70 hover:text-white sm:size-10"
+                className="absolute right-3 top-3 size-11 rounded-full bg-black/55 text-white hover:bg-black/80 hover:text-white sm:size-10"
                 aria-label="Închide galeria"
               />
             }
@@ -83,7 +93,7 @@ export function PhotoLightbox({ photos, index, onIndexChange, onClose, propertyN
                 type="button"
                 size="icon"
                 variant="ghost"
-                className="absolute left-[max(0.5rem,env(safe-area-inset-left))] top-1/2 size-11 -translate-y-1/2 bg-black/45 text-white hover:bg-black/70 hover:text-white sm:left-4 sm:size-10"
+                className="absolute left-3 top-1/2 size-11 -translate-y-1/2 rounded-full bg-black/55 text-white hover:bg-black/80 hover:text-white sm:left-4 sm:size-10"
                 onClick={() => onIndexChange((index - 1 + photos.length) % photos.length)}
                 aria-label="Fotografia anterioară"
               >
@@ -93,7 +103,7 @@ export function PhotoLightbox({ photos, index, onIndexChange, onClose, propertyN
                 type="button"
                 size="icon"
                 variant="ghost"
-                className="absolute right-[max(0.5rem,env(safe-area-inset-right))] top-1/2 size-11 -translate-y-1/2 bg-black/45 text-white hover:bg-black/70 hover:text-white sm:right-4 sm:size-10"
+                className="absolute right-3 top-1/2 size-11 -translate-y-1/2 rounded-full bg-black/55 text-white hover:bg-black/80 hover:text-white sm:right-4 sm:size-10"
                 onClick={() => onIndexChange((index + 1) % photos.length)}
                 aria-label="Fotografia următoare"
               >
@@ -101,7 +111,7 @@ export function PhotoLightbox({ photos, index, onIndexChange, onClose, propertyN
               </Button>
             </>
           )}
-          <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/70 to-transparent px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-10 text-xs text-white/90 sm:px-6 sm:text-sm">
+          <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/75 to-transparent px-4 pb-4 pt-10 text-xs text-white/90 sm:px-6 sm:text-sm">
             <span role="status" aria-live="polite" aria-atomic="true">
               {index + 1} / {photos.length}
             </span>

@@ -29,7 +29,7 @@ const photos: PropertyPhotoResponse[] = [
 ]
 
 describe("PropertyGallery", () => {
-  it("opens the fullscreen gallery at the selected photo", async () => {
+  it("opens the gallery at the selected photo, centred and not full screen", async () => {
     const user = userEvent.setup()
     renderWithProviders(<PropertyGallery photos={photos} propertyName="Apartament Central" />)
 
@@ -43,7 +43,12 @@ describe("PropertyGallery", () => {
       name: "Apartament Central — fotografia 2 din 3",
     })
     expect(dialog).toBeInTheDocument()
-    expect(dialog).toHaveClass("h-dvh", "w-screen", "max-w-none")
+    // A centred panel at ~80% of the viewport, not an edge-to-edge takeover:
+    // the centring transform comes from the base dialog and must survive.
+    expect(dialog).toHaveClass("sm:h-[80vh]", "sm:w-[80vw]")
+    expect(dialog).toHaveClass("-translate-x-1/2", "-translate-y-1/2")
+    expect(dialog).not.toHaveClass("h-dvh", "w-screen")
+    // object-contain is what keeps the whole photo visible instead of cropped.
     expect(screen.getByRole("img", { name: "Dormitor" })).toHaveClass("object-contain")
     expect(screen.getByRole("status")).toHaveTextContent("2 / 3")
     await waitFor(() => expect(screen.getByRole("button", { name: "Închide galeria" })).toHaveFocus())

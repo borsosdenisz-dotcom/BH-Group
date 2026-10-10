@@ -143,7 +143,13 @@ export default function LeafletMap({
       ref={containerRef}
       style={height ? { height } : undefined}
       className={cn(
-        "w-full overflow-hidden rounded-lg border border-border/60",
+        // `isolate` is load-bearing, not cosmetic: Leaflet gives its panes
+        // z-index 400-700 and its zoom controls 1000, while nothing in this
+        // app goes above z-50. Without a stacking context here those numbers
+        // compete with the whole page and the map draws over dialogs - which
+        // is how the photo lightbox ended up with a map floating on top of it.
+        // Isolating scopes Leaflet's z-indexes to this container.
+        "isolate w-full overflow-hidden rounded-lg border border-border/60",
         !height && "h-full"
       )}
     />
