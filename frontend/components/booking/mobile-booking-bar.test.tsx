@@ -27,6 +27,7 @@ const baseProperty: PublicPropertyResponse = {
   checkOutTime: "11:00:00",
   facilities: [],
   photos: [],
+  demo: false,
 }
 
 const baseQuote: PriceQuoteResponse = {

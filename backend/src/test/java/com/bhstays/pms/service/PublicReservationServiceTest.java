@@ -13,7 +13,9 @@ import static org.mockito.Mockito.when;
 
 import com.bhstays.pms.common.exception.ApiException;
 import com.bhstays.pms.common.exception.BadRequestException;
+import com.bhstays.pms.common.exception.DemoPropertyException;
 import com.bhstays.pms.common.exception.ServiceUnavailableException;
+import com.bhstays.pms.domain.Property;
 import com.bhstays.pms.domain.Reservation;
 import com.bhstays.pms.dto.payment.CheckoutSessionResponse;
 import com.bhstays.pms.dto.publicapi.PublicBookingRequest;
@@ -135,7 +137,52 @@ class PublicReservationServiceTest {
 
     @Test
     void createCheckoutSession_withoutStripe_isUnavailable() {
+        reservation.setProperty(Property.builder().name("Normal").build());
+        when(reservationService.getByManagementToken("tok-1")).thenReturn(reservation);
+
         assertThatThrownBy(() -> serviceWithStripe(false).createCheckoutSession("tok-1"))
                 .isInstanceOf(ServiceUnavailableException.class);
+    }
+
+    // ------------------------------------------------------------------
+    // demo (showcase) properties: refused with 409 before anything else
+    // ------------------------------------------------------------------
+
+    @Test
+    void quote_forADemoProperty_isRefused() {
+        Property demo = Property.builder().name("Demo").demo(true).build();
+        when(propertyRepository.findById(any())).thenReturn(Optional.of(demo));
+
+        assertThatThrownBy(() -> serviceWithStripe(true).quote(UUID.randomUUID(),
+                LocalDate.now().plusDays(30), LocalDate.now().plusDays(34), 2))
+                .isInstanceOf(DemoPropertyException.class)
+                .hasMessage(DemoPropertyException.MESSAGE);
+        verify(pricingService, never()).quote(any(), any(), any(), anyInt());
+    }
+
+    @Test
+    void createBooking_forADemoProperty_isRefusedBeforeAnythingIsHeld_evenWithoutStripe() {
+        Property demo = Property.builder().name("Demo").demo(true).build();
+        when(propertyRepository.findById(any())).thenReturn(Optional.of(demo));
+
+        for (boolean stripe : new boolean[] {true, false}) {
+            assertThatThrownBy(() -> serviceWithStripe(stripe).createBooking(request("ONLINE_CARD")))
+                    .isInstanceOf(DemoPropertyException.class);
+        }
+        verify(reservationService, never()).createGuestBooking(any(), any(), any(), any(), any(), any(), any(),
+                anyInt(), any(), any());
+        verify(stripeCheckoutService, never()).createCheckoutSession(any());
+    }
+
+    @Test
+    void createCheckoutSession_withAnExistingTokenOnADemoProperty_isRefused_evenWithoutStripe() {
+        reservation.setProperty(Property.builder().name("Demo").demo(true).build());
+        when(reservationService.getByManagementToken("tok-1")).thenReturn(reservation);
+
+        for (boolean stripe : new boolean[] {true, false}) {
+            assertThatThrownBy(() -> serviceWithStripe(stripe).createCheckoutSession("tok-1"))
+                    .isInstanceOf(DemoPropertyException.class);
+        }
+        verify(stripeCheckoutService, never()).createCheckoutSession(any());
     }
 }

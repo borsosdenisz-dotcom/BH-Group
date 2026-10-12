@@ -95,6 +95,9 @@ public record PropertyCreateRequest(
 
         LocalTime lateCheckoutTime,
 
-        BigDecimal lateCheckoutFee
+        BigDecimal lateCheckoutFee,
+
+        /** Showcase listing: visible publicly, never bookable or payable. */
+        boolean demo
 ) {
 }

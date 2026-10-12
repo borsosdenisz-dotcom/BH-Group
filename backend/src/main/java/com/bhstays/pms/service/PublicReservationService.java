@@ -1,6 +1,7 @@
 package com.bhstays.pms.service;
 
 import com.bhstays.pms.common.exception.BadRequestException;
+import com.bhstays.pms.common.exception.DemoPropertyException;
 import com.bhstays.pms.common.exception.ResourceNotFoundException;
 import com.bhstays.pms.common.exception.ServiceUnavailableException;
 import com.bhstays.pms.domain.Property;
@@ -43,8 +44,12 @@ public class PublicReservationService {
     static final String ONLINE_BOOKING_UNAVAILABLE =
             "Rezervarea online nu este momentan disponibilă. Te rugăm să ne contactezi direct.";
 
+    /** A demo property is never reported as available - it has no bookable dates. */
     @Transactional(readOnly = true)
     public AvailabilityResponse availability(UUID propertyId, LocalDate checkIn, LocalDate checkOut) {
+        if (propertyRepository.findById(propertyId).map(Property::isDemo).orElse(false)) {
+            return new AvailabilityResponse(false);
+        }
         return reservationService.availability(propertyId, checkIn, checkOut);
     }
 
@@ -52,6 +57,7 @@ public class PublicReservationService {
     public PriceQuoteResponse quote(UUID propertyId, LocalDate checkIn, LocalDate checkOut, int guests) {
         Property property = propertyRepository.findById(propertyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+        assertNotDemo(property);
         pricingService.validateGuestCount(property, guests);
         return pricingService.quote(property, checkIn, checkOut, guests);
     }
@@ -67,10 +73,12 @@ public class PublicReservationService {
      *       back, so no hold is left blocking the calendar.
      * </ul>
      * No email goes out here: the guest's confirmation is sent only once the
-     * signed webhook has confirmed the payment.
+     * signed webhook has confirmed the payment. A demo property is refused
+     * first (409), whatever else is wrong with the request.
      */
     @Transactional
     public PublicBookingCheckoutResponse createBooking(PublicBookingRequest request) {
+        propertyRepository.findById(request.propertyId()).ifPresent(PublicReservationService::assertNotDemo);
         if (request.paymentMethod() != null && !PublicBookingRequest.ONLINE_CARD.equals(request.paymentMethod())) {
             throw new BadRequestException("Rezervarea online se poate plăti doar cu cardul.");
         }
@@ -95,6 +103,9 @@ public class PublicReservationService {
      */
     @Transactional
     public CheckoutSessionResponse createCheckoutSession(String token) {
+        // A hold taken before the property became demo keeps its token; it
+        // must not be payable either. StripeCheckoutService re-checks under lock.
+        assertNotDemo(reservationService.getByManagementToken(token).getProperty());
         StripeCheckoutService checkout = stripeCheckoutService.orElseThrow(() ->
                 new ServiceUnavailableException("ONLINE_BOOKING_UNAVAILABLE", ONLINE_BOOKING_UNAVAILABLE));
         return openCheckout(checkout, token);
@@ -108,6 +119,12 @@ public class PublicReservationService {
             // including a hold created moments ago - rolls back.
             throw new ServiceUnavailableException("ONLINE_PAYMENT_UNAVAILABLE",
                     "Plata online nu este disponibilă momentan. Nu am reținut nicio rezervare - te rugăm să reîncerci în câteva minute sau să ne contactezi.");
+        }
+    }
+
+    static void assertNotDemo(Property property) {
+        if (property.isDemo()) {
+            throw new DemoPropertyException();
         }
     }
 

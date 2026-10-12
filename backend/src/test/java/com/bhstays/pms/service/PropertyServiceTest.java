@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -15,10 +16,12 @@ import com.bhstays.pms.common.exception.BadRequestException;
 import com.bhstays.pms.domain.AuditAction;
 import com.bhstays.pms.domain.IntegrationMode;
 import com.bhstays.pms.domain.Property;
+import com.bhstays.pms.domain.PropertyStatus;
 import com.bhstays.pms.domain.PropertyType;
 import com.bhstays.pms.domain.User;
 import com.bhstays.pms.dto.property.PropertyCreateRequest;
 import com.bhstays.pms.dto.property.PropertyResponse;
+import com.bhstays.pms.dto.property.PropertyUpdateRequest;
 import com.bhstays.pms.repository.PropertyDocumentRepository;
 import com.bhstays.pms.repository.PropertyPhotoRepository;
 import com.bhstays.pms.repository.PropertyRepository;
@@ -34,6 +37,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -127,6 +131,46 @@ class PropertyServiceTest {
         assertThatCode(() -> propertyService.create(request)).doesNotThrowAnyException();
     }
 
+    @Test
+    void create_storesTheDemoFlagSetByTheAdministrator() {
+        var bookable = createRequest(false, null, null);
+        var demo = new PropertyCreateRequest(
+                bookable.name(), null, PropertyType.APARTMENT, null, false, 1, 1, 2,
+                null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                false, null, null, false, null, null,
+                true);
+
+        propertyService.create(demo);
+        propertyService.create(bookable);
+
+        var saved = ArgumentCaptor.forClass(Property.class);
+        verify(propertyRepository, times(2)).save(saved.capture());
+        assertThat(saved.getAllValues()).extracting(Property::isDemo).containsExactly(true, false);
+    }
+
+    @Test
+    void update_turnsTheDemoFlagOnAndOff() {
+        propertyService.update(property.getId(), updateRequest(true));
+        assertThat(property.isDemo()).isTrue();
+
+        propertyService.update(property.getId(), updateRequest(false));
+        assertThat(property.isDemo()).isFalse();
+    }
+
+    private PropertyUpdateRequest updateRequest(boolean demo) {
+        // name, description, propertyType, status, address, showExactAddressPublicly,
+        return new PropertyUpdateRequest(
+                "Test Apartment", null, PropertyType.APARTMENT, PropertyStatus.ACTIVE, null, false,
+                // bedrooms, bathrooms, maxGuests, then the pricing/stay/owner/checklist/time/facility fields
+                1, 1, 2,
+                null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                // smartLock*, lateCheckout*, demo
+                false, null, null, false, null, null,
+                demo);
+    }
+
     private PropertyCreateRequest createRequest(boolean lateCheckoutEnabled, LocalTime lateCheckoutTime,
                                                  BigDecimal lateCheckoutFee) {
         // Positional record - must track PropertyCreateRequest's field order exactly.
@@ -143,8 +187,8 @@ class PropertyServiceTest {
                 null, null, null, null, null, null, null, null, null,
                 // smartLockEnabled, smartLockProvider, smartLockDeviceId,
                 false, null, null,
-                // lateCheckoutEnabled, lateCheckoutTime, lateCheckoutFee
-                lateCheckoutEnabled, lateCheckoutTime, lateCheckoutFee);
+                // lateCheckoutEnabled, lateCheckoutTime, lateCheckoutFee, demo
+                lateCheckoutEnabled, lateCheckoutTime, lateCheckoutFee, false);
     }
 
     // ------------------------------------------------------------------

@@ -150,6 +150,7 @@ public class PropertyService {
                 .lateCheckoutEnabled(request.lateCheckoutEnabled())
                 .lateCheckoutTime(request.lateCheckoutTime())
                 .lateCheckoutFee(request.lateCheckoutFee())
+                .demo(request.demo())
                 .build();
 
         property = propertyRepository.save(property);
@@ -199,6 +200,7 @@ public class PropertyService {
         property.setLateCheckoutEnabled(request.lateCheckoutEnabled());
         property.setLateCheckoutTime(request.lateCheckoutTime());
         property.setLateCheckoutFee(request.lateCheckoutFee());
+        property.setDemo(request.demo());
 
         property = propertyRepository.save(property);
         if (commissionChanged(previousCommission, property.getCommissionPercent())) {

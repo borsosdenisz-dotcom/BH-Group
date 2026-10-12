@@ -49,6 +49,7 @@ export function PropertyBookingCard({
 }: PropertyBookingCardProps) {
   const reduceMotion = useReducedMotion()
   const hasDates = !!checkIn && !!checkOut
+  const isDemo = property.demo
 
   const derivedPerNight =
     !property.basePricePerNight && quote?.totalAmount != null && quote.nights > 0
@@ -142,7 +143,7 @@ export function PropertyBookingCard({
         </div>
 
         <AnimatePresence mode="wait">
-          {hasDates && (
+          {hasDates && !isDemo && (
             <motion.div
               key={ctaState + (quote?.totalAmount ?? "")}
               initial={reduceMotion ? undefined : { opacity: 0, y: 4 }}
@@ -211,7 +212,11 @@ export function PropertyBookingCard({
           )}
         </AnimatePresence>
 
-        {!onlineBookingAvailable ? (
+        {isDemo ? (
+          <p className="rounded-lg bg-muted/60 px-3 py-2.5 text-center text-sm text-muted-foreground">
+            Anunț demonstrativ: prețul este orientativ, iar proprietatea nu se poate rezerva.
+          </p>
+        ) : !onlineBookingAvailable ? (
           <>
             <Button size="lg" disabled className="w-full">
               Rezervare online indisponibilă
@@ -232,7 +237,7 @@ export function PropertyBookingCard({
           </Button>
         )}
 
-        {onlineBookingAvailable && (
+        {onlineBookingAvailable && !isDemo && (
           <p className="text-center text-xs text-muted-foreground">
             Plătești online cu cardul, iar rezervarea se confirmă automat imediat după plată.
           </p>

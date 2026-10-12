@@ -27,6 +27,7 @@ const baseProperty: PublicPropertyResponse = {
   checkOutTime: "11:00:00",
   facilities: [],
   photos: [],
+  demo: false,
 }
 
 const baseQuote: PriceQuoteResponse = {
@@ -201,6 +202,23 @@ describe("PropertyBookingCard", () => {
       expect(screen.getByText("Taxă curățenie")).toBeInTheDocument()
       expect(screen.getByText("Taxă oaspeți suplimentari")).toBeInTheDocument()
       expect(screen.getByText("Reducere (10%)")).toBeInTheDocument()
+    })
+  })
+
+  describe("demo property", () => {
+    it("keeps the price as an example but offers no 'Rezervă' and no quote breakdown", () => {
+      renderCard({
+        property: { ...baseProperty, demo: true },
+        checkIn: "2026-09-01",
+        checkOut: "2026-09-05",
+        quote: baseQuote,
+      })
+
+      expect(screen.getByText("300 RON")).toBeInTheDocument()
+      expect(screen.queryByRole("link", { name: "Rezervă" })).not.toBeInTheDocument()
+      expect(screen.queryByRole("button", { name: /Rezervă|Selectează perioada|Se calculează/ })).not.toBeInTheDocument()
+      expect(screen.queryByText("Total")).not.toBeInTheDocument()
+      expect(screen.getByText(/proprietatea nu se poate rezerva/)).toBeInTheDocument()
     })
   })
 })

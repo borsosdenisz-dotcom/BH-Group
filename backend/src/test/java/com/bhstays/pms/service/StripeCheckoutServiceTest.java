@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.bhstays.pms.common.exception.BadRequestException;
+import com.bhstays.pms.common.exception.DemoPropertyException;
 import com.bhstays.pms.config.AppProperties;
 import com.bhstays.pms.domain.Payment;
 import com.bhstays.pms.domain.PaymentProvider;
@@ -145,6 +146,19 @@ class StripeCheckoutServiceTest {
         assertThat(captor.getValue().successUrl()).isEqualTo("https://bhstays.test/plata/succes?token=" + TOKEN);
         assertThat(captor.getValue().cancelUrl()).isEqualTo("https://bhstays.test/plata/anulat?token=" + TOKEN);
         assertThat(captor.getValue().idempotencyKey()).isNotBlank();
+    }
+
+    @Test
+    void createCheckoutSession_refusesAHoldOnADemoProperty_withoutReachingStripe() {
+        // A hold taken before the property became demo still has a valid token.
+        reservation.getProperty().setDemo(true);
+        when(reservationService.lockByManagementToken(TOKEN)).thenReturn(reservation);
+
+        assertThatThrownBy(() -> stripeCheckoutService.createCheckoutSession(TOKEN))
+                .isInstanceOf(DemoPropertyException.class);
+
+        verify(paymentService, never()).startOnlineCardPayment(any(), any(), any());
+        verify(stripeGateway, never()).createCheckoutSession(any());
     }
 
     @Test

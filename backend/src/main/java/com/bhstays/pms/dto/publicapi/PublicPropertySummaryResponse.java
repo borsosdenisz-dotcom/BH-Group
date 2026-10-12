@@ -20,6 +20,8 @@ public record PublicPropertySummaryResponse(
         BigDecimal basePricePerNight,
         String currency,
         String coverPhotoUrl,
-        Set<Facility> facilities
+        Set<Facility> facilities,
+        /** Showcase listing: shown for illustration only, cannot be quoted, booked or paid. */
+        boolean demo
 ) {
 }

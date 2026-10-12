@@ -86,6 +86,7 @@ const propertySchema = z.object({
   lateCheckoutEnabled: z.boolean(),
   lateCheckoutTime: z.string().optional(),
   lateCheckoutFee: z.coerce.number().min(0).optional(),
+  demo: z.boolean(),
 })
 
 export type PropertyFormValues = z.infer<typeof propertySchema>
@@ -131,6 +132,7 @@ function toFormValues(property?: PropertyResponse): PropertyFormValues {
       lateCheckoutEnabled: false,
       lateCheckoutTime: "14:00",
       lateCheckoutFee: undefined,
+      demo: false,
     }
   }
 
@@ -173,6 +175,7 @@ function toFormValues(property?: PropertyResponse): PropertyFormValues {
     lateCheckoutEnabled: property.lateCheckoutEnabled,
     lateCheckoutTime: property.lateCheckoutTime?.slice(0, 5) ?? "14:00",
     lateCheckoutFee: property.lateCheckoutFee ?? undefined,
+    demo: property.demo,
   }
 }
 
@@ -220,6 +223,7 @@ export function propertyFormValuesToPayload(
     lateCheckoutEnabled: values.lateCheckoutEnabled,
     lateCheckoutTime: values.lateCheckoutTime ? `${values.lateCheckoutTime}:00` : null,
     lateCheckoutFee: values.lateCheckoutFee ?? null,
+    demo: values.demo,
   }
 }
 
@@ -324,6 +328,22 @@ export function PropertyForm({ property, mode, onSubmit, isSubmitting }: Propert
                 )}
               />
             )}
+            <FormField
+              control={form.control}
+              name="demo"
+              render={({ field }) => (
+                <FormItem className="sm:col-span-2">
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    Anunț demonstrativ
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Apare pe site cu eticheta „Demo”, dar nu poate fi rezervat sau plătit și nu este
+                    indexat de motoarele de căutare.
+                  </p>
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
 

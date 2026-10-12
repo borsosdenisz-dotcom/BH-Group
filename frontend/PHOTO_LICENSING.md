@@ -34,3 +34,12 @@ Property photos shown on individual property pages (`/book/[id]`) are a
 separate case: those are uploaded by staff per-property through the
 dashboard (`PropertyPhoto`), not stock imagery, and licensing for those is
 whatever staff agreed to when uploading them - out of scope for this file.
+
+## Demo (showcase) properties
+
+A property flagged **demo** is not a real listing, so it must never use
+photos or text taken from another platform (Airbnb, Booking.com, a real
+host's listing). Its photos are uploaded through the dashboard like any
+other property, but are taken only from the Unsplash images already listed
+above (download from `images.unsplash.com/<photo ID>`), and its description
+is written by us and says it is a demonstration listing.

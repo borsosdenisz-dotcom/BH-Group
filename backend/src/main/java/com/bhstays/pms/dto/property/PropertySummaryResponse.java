@@ -15,6 +15,7 @@ public record PropertySummaryResponse(
         int bathrooms,
         int maxGuests,
         String coverPhotoUrl,
-        Instant createdAt
+        Instant createdAt,
+        boolean demo
 ) {
 }

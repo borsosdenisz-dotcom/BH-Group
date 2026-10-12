@@ -56,6 +56,7 @@ export interface PropertyPayload {
   lateCheckoutEnabled: boolean
   lateCheckoutTime?: string | null
   lateCheckoutFee?: number | null
+  demo: boolean
 }
 
 export interface SeasonalRatePayload {

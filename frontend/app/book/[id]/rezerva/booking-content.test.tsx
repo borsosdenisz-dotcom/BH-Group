@@ -72,6 +72,18 @@ describe("BookingContent", () => {
     expect(screen.queryByRole("button", { name: "Continuă către plată" })).not.toBeInTheDocument()
   })
 
+  it("shows the demo banner and no booking form for a demo property, even with card payment active", async () => {
+    getPaymentConfig.mockResolvedValue({ cardPaymentsEnabled: true, publishableKey: "pk_test" })
+    getProperty.mockResolvedValue({ id: "prop-1", name: "Apartament Demo", demo: true })
+
+    renderWithProviders(<BookingContent id="prop-1" />)
+
+    expect(await screen.findByText("Anunț demonstrativ – nu se poate rezerva")).toBeInTheDocument()
+    expect(bookingFormRendered).not.toHaveBeenCalled()
+    expect(screen.queryByRole("button", { name: "Continuă către plată" })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Plata se face online, cu cardul/)).not.toBeInTheDocument()
+  })
+
   it("disables booking entirely and shows the contact details when card payment is unavailable", async () => {
     getPaymentConfig.mockResolvedValue({ cardPaymentsEnabled: false, publishableKey: null })
 

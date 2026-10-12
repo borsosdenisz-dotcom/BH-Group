@@ -13,10 +13,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     const properties = await publicApi.searchProperties({ size: 200 })
-    const propertyEntries: MetadataRoute.Sitemap = properties.content.map((property) => ({
-      url: `${SITE_URL}/book/${property.id}`,
-      lastModified: new Date(),
-    }))
+    const propertyEntries: MetadataRoute.Sitemap = properties.content
+      .filter((property) => !property.demo)
+      .map((property) => ({
+        url: `${SITE_URL}/book/${property.id}`,
+        lastModified: new Date(),
+      }))
     return [...staticEntries, ...propertyEntries]
   } catch {
     return staticEntries

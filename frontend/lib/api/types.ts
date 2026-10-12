@@ -167,6 +167,8 @@ export interface PropertySummaryResponse {
   maxGuests: number
   coverPhotoUrl: string | null
   createdAt: string
+  /** Showcase listing: shown on the site, but it cannot be quoted, booked or paid. */
+  demo: boolean
 }
 
 export type CancellationPolicy = "FLEXIBLE" | "MODERATE" | "STRICT" | "NON_REFUNDABLE"
@@ -214,6 +216,8 @@ export interface PropertyResponse {
   documents: PropertyDocumentResponse[]
   createdAt: string
   updatedAt: string
+  /** Showcase listing: shown on the site, but it cannot be quoted, booked or paid. */
+  demo: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -621,6 +625,8 @@ export interface PublicPropertySummaryResponse {
   currency: string
   coverPhotoUrl: string | null
   facilities: Facility[]
+  /** Showcase listing: shown on the site, but it cannot be quoted, booked or paid. */
+  demo: boolean
 }
 
 export interface PublicPropertyResponse {
@@ -648,6 +654,8 @@ export interface PublicPropertyResponse {
   checkOutTime: string
   facilities: Facility[]
   photos: PropertyPhotoResponse[]
+  /** Showcase listing: shown on the site, but it cannot be quoted, booked or paid. */
+  demo: boolean
 }
 
 export interface PublicReservationResponse {

@@ -66,7 +66,8 @@ public class PropertyMapper {
                 photos.stream().map(this::toPhotoResponse).toList(),
                 documents.stream().map(this::toDocumentResponse).toList(),
                 property.getCreatedAt(),
-                property.getUpdatedAt()
+                property.getUpdatedAt(),
+                property.isDemo()
         );
     }
 
@@ -88,7 +89,8 @@ public class PropertyMapper {
                 property.getBathrooms(),
                 property.getMaxGuests(),
                 coverUrl,
-                property.getCreatedAt()
+                property.getCreatedAt(),
+                property.isDemo()
         );
     }
 

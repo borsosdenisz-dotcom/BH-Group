@@ -7,6 +7,7 @@ import { motion, useReducedMotion } from "motion/react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AvailabilityCalendar } from "@/components/booking/availability-calendar"
+import { DemoPropertyBanner } from "@/components/booking/demo-property-banner"
 import { MobileBookingBar } from "@/components/booking/mobile-booking-bar"
 import { PropertyAmenities } from "@/components/booking/property-amenities"
 import { PropertyBookingCard } from "@/components/booking/property-booking-card"
@@ -51,7 +52,13 @@ function PropertyDetailInner({ id }: { id: string }) {
     router.replace(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
-  const quoteQuery = usePublicQuote(property?.id ?? "", checkIn ?? "", checkOut ?? "", guests)
+  // A demo property cannot be quoted (the backend answers 409), so don't ask.
+  const quoteQuery = usePublicQuote(
+    property && !property.demo ? property.id : "",
+    checkIn ?? "",
+    checkOut ?? "",
+    guests
+  )
   const paymentConfig = usePaymentConfig()
   // Card-only: no online payment means no online booking. While the config
   // is still loading the CTA stays as is; the booking page re-checks anyway.
@@ -89,6 +96,8 @@ function PropertyDetailInner({ id }: { id: string }) {
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="mx-auto flex max-w-7xl flex-col gap-8 pb-8 lg:pb-0"
     >
+      {property.demo && <DemoPropertyBanner />}
+
       <PropertyGallery photos={property.photos} propertyName={property.name} />
 
       <div className="flex flex-col gap-3">
@@ -169,17 +178,21 @@ function PropertyDetailInner({ id }: { id: string }) {
         </div>
       </div>
 
-      <MobileBookingBar
-        property={property}
-        checkIn={checkIn}
-        checkOut={checkOut}
-        quote={quoteQuery.data}
-        isQuoteLoading={quoteQuery.isLoading}
-        bookingHref={bookingHref}
-        onlineBookingAvailable={onlineBookingAvailable}
-      />
-      {/* Compensates for the fixed mobile bar so the last section isn't hidden behind it. */}
-      <div className="h-24 lg:hidden" aria-hidden />
+      {!property.demo && (
+        <>
+          <MobileBookingBar
+            property={property}
+            checkIn={checkIn}
+            checkOut={checkOut}
+            quote={quoteQuery.data}
+            isQuoteLoading={quoteQuery.isLoading}
+            bookingHref={bookingHref}
+            onlineBookingAvailable={onlineBookingAvailable}
+          />
+          {/* Compensates for the fixed mobile bar so the last section isn't hidden behind it. */}
+          <div className="h-24 lg:hidden" aria-hidden />
+        </>
+      )}
     </motion.div>
   )
 }

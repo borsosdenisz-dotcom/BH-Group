@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Bath, BedDouble, Building2, MapPin, Users } from "lucide-react"
+import { DemoBadge } from "@/components/booking/demo-property-banner"
 import type { PublicPropertySummaryResponse } from "@/lib/api/types"
 import { FACILITY_LABELS, PROPERTY_TYPE_LABELS } from "@/lib/property-labels"
 
@@ -35,6 +36,7 @@ export function PublicPropertyCard({
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+        {property.demo && <DemoBadge className="absolute right-3 top-3" />}
         {property.basePricePerNight != null && (
           <div className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1.5 shadow-sm backdrop-blur-sm">
             <p className="text-[10px] font-medium uppercase tracking-wide text-neutral-500">Preț de la</p>

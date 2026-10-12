@@ -53,7 +53,10 @@ public class PublicPropertyService {
 
         List<Property> filtered = page.getContent();
         if (checkIn != null && checkOut != null) {
+            // Searching by dates asks "what can I book then?" - a demo
+            // listing is never an answer to that.
             filtered = filtered.stream()
+                    .filter(property -> !property.isDemo())
                     .filter(property -> reservationRepository
                             .findOverlapping(property.getId(), checkIn, checkOut, null, ReservationStatus.NON_BLOCKING)
                             .isEmpty())

@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { BookingForm } from "@/components/booking/booking-form"
+import { DemoPropertyBanner } from "@/components/booking/demo-property-banner"
 import { OnlineBookingUnavailable } from "@/components/booking/online-booking-unavailable"
 import { usePaymentConfig, usePublicProperty } from "@/hooks/use-public-booking"
 import { redirectToExternal } from "@/lib/redirect"
@@ -23,7 +24,7 @@ function BookingInner({ id }: { id: string }) {
   const { data: property, isLoading } = usePublicProperty(id)
   const { data: paymentConfig, isLoading: paymentConfigLoading } = usePaymentConfig()
   const [redirecting, setRedirecting] = useState(false)
-  const onlineBookingAvailable = paymentConfig?.cardPaymentsEnabled === true
+  const onlineBookingAvailable = paymentConfig?.cardPaymentsEnabled === true && property?.demo !== true
 
   function handleBookingHeld(booking: PublicBookingCheckoutResponse) {
     setRedirecting(true)
@@ -73,7 +74,9 @@ function BookingInner({ id }: { id: string }) {
           </p>
         )}
       </div>
-      {onlineBookingAvailable ? (
+      {property.demo ? (
+        <DemoPropertyBanner />
+      ) : onlineBookingAvailable ? (
         <BookingForm
           property={property}
           defaultCheckIn={searchParams.get("checkIn") ?? undefined}

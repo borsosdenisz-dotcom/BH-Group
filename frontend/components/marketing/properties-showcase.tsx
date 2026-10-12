@@ -4,6 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { motion } from "motion/react"
 import { ArrowRight, BedDouble, Building2, MapPin, Users } from "lucide-react"
+import { DemoBadge } from "@/components/booking/demo-property-banner"
 import { Reveal, RevealGroup, RevealItem } from "@/components/marketing/reveal"
 import { buttonVariants } from "@/components/ui/button"
 import { usePublicProperties } from "@/hooks/use-public-booking"
@@ -64,6 +65,7 @@ export function PropertiesShowcase() {
                     </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                  {property.demo && <DemoBadge className="absolute right-3 top-3" />}
                   <motion.div
                     initial={{ y: 8, opacity: 0 }}
                     whileInView={{ y: 0, opacity: 1 }}

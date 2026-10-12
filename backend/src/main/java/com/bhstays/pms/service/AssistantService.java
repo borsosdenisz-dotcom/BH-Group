@@ -245,7 +245,7 @@ public class AssistantService {
         }
 
         List<PropertyMatch> matches = found.stream()
-                .map(p -> new PropertyMatch(p.id(), p.name(), p.city(), p.maxGuests()))
+                .map(p -> new PropertyMatch(p.id(), p.name(), p.city(), p.maxGuests(), p.demo()))
                 .toList();
         return objectMapper.writeValueAsString(matches);
     }
@@ -330,7 +330,8 @@ public class AssistantService {
 
     // Compact shape for find_property results - just enough for the model
     // to pick the right property id, not the full public property payload.
-    private record PropertyMatch(UUID id, String name, String city, int maxGuests) {
+    // demo=true marks a showcase listing that cannot be booked.
+    private record PropertyMatch(UUID id, String name, String city, int maxGuests, boolean demo) {
     }
 
     // ------------------------------------------------------------------

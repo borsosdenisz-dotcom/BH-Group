@@ -33,6 +33,8 @@ public record PublicPropertyResponse(
         LocalTime checkInTime,
         LocalTime checkOutTime,
         Set<Facility> facilities,
-        List<PropertyPhotoResponse> photos
+        List<PropertyPhotoResponse> photos,
+        /** Showcase listing: shown for illustration only, cannot be quoted, booked or paid. */
+        boolean demo
 ) {
 }

@@ -1,6 +1,7 @@
 package com.bhstays.pms.service;
 
 import com.bhstays.pms.common.exception.BadRequestException;
+import com.bhstays.pms.common.exception.DemoPropertyException;
 import com.bhstays.pms.config.AppProperties;
 import com.bhstays.pms.domain.Payment;
 import com.bhstays.pms.domain.Reservation;
@@ -148,11 +149,17 @@ public class StripeCheckoutService {
     }
 
     /**
-     * Only a booking that is still holding the calendar may be paid for. A
+     * Only a booking that is still holding the calendar, on a property that
+     * is not a demo, may be paid for. A
      * confirmed one is already paid, and an expired/cancelled hold no longer
      * owns its dates - someone else may have taken them.
      */
     private void assertPayable(Reservation reservation, Instant now) {
+        // Checked first: a hold taken before the property became demo still
+        // has a valid token, but must never reach Stripe.
+        if (reservation.getProperty().isDemo()) {
+            throw new DemoPropertyException();
+        }
         if (reservation.getStatus() == ReservationStatus.CONFIRMED) {
             throw new BadRequestException("Rezervarea este deja confirmată și plătită");
         }

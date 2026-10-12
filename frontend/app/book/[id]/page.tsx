@@ -34,6 +34,8 @@ export async function generateMetadata({
   return {
     title,
     description,
+    // A demo listing is a showcase, not an offer - keep it out of search results.
+    ...(property.demo ? { robots: { index: false, follow: false } } : {}),
     alternates: { canonical: `${SITE_URL}/book/${id}` },
     openGraph: {
       title,
@@ -59,7 +61,7 @@ export default async function PublicPropertyDetailPage({
   const { id } = await params
   const property = await fetchProperty(id)
 
-  const jsonLd = property
+  const jsonLd = property && !property.demo
     ? {
         "@context": "https://schema.org",
         "@type": "LodgingBusiness",

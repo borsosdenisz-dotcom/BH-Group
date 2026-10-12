@@ -164,6 +164,15 @@ public class StripeWebhookService {
 
         paymentService.recordCardCapture(payment, paymentIntentId(session));
 
+        if (reservation.getStatus() == ReservationStatus.PENDING && reservation.getProperty().isDemo()) {
+            // A session opened before the property became demo was paid
+            // anyway. A demo listing is never confirmed: release the hold so
+            // the refund below applies, exactly as for a late payment.
+            log.error("Stripe event {} paid reservation {} on demo property {} - releasing and refunding",
+                    eventId, reservation.getId(), reservation.getProperty().getId());
+            reservationService.releaseHold(reservation, "Anunț demonstrativ - plata nu poate confirma rezervarea");
+        }
+
         if (reservation.getStatus() != ReservationStatus.PENDING) {
             // The hold was released (or the booking cancelled) before the money
             // landed. Those dates are no longer ours to sell, so give it back

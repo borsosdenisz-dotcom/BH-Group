@@ -1,6 +1,7 @@
 package com.bhstays.pms.service;
 
 import com.bhstays.pms.common.exception.BadRequestException;
+import com.bhstays.pms.common.exception.DemoPropertyException;
 import com.bhstays.pms.common.exception.ResourceNotFoundException;
 import com.bhstays.pms.common.response.PageResponse;
 import com.bhstays.pms.domain.AuditAction;
@@ -327,6 +328,9 @@ public class ReservationService {
         Property property = propertyRepository.findById(propertyId)
                 .filter(p -> p.getStatus() == PropertyStatus.ACTIVE)
                 .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+        if (property.isDemo()) {
+            throw new DemoPropertyException();
+        }
 
         validateDates(checkInDate, checkOutDate);
         pricingService.validateGuestCount(property, numberOfGuests);

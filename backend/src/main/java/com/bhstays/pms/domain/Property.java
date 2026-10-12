@@ -173,6 +173,14 @@ public class Property extends BaseEntity {
     @Column(name = "late_checkout_fee")
     private BigDecimal lateCheckoutFee;
 
+    /**
+     * Showcase listing: shown on the public site, but never quotable,
+     * bookable or payable. Enforced server-side on every public booking path.
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean demo = false;
+
     @Column(name = "ical_export_token", unique = true)
     private String icalExportToken;
 

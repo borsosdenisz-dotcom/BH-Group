@@ -300,7 +300,7 @@ class AssistantServiceTest {
         UUID propertyId = UUID.randomUUID();
         PublicPropertySummaryResponse summary = new PublicPropertySummaryResponse(
                 propertyId, "Apartament Central", "Cluj-Napoca", "Cluj", null, null,
-                null, 2, 1, 4, new BigDecimal("250"), "RON", null, null);
+                null, 2, 1, 4, new BigDecimal("250"), "RON", null, null, false);
         when(publicPropertyService.search(eq("apartament centru"), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(new PageResponse<>(List.of(summary), 0, 5, 1, 1, true, true));
 
@@ -327,7 +327,7 @@ class AssistantServiceTest {
         UUID propertyId = UUID.randomUUID();
         PublicPropertySummaryResponse summary = new PublicPropertySummaryResponse(
                 propertyId, "Apartament cluj", "Cluj", "Cluj", null, null,
-                null, 1, 1, 2, new BigDecimal("200"), "RON", null, null);
+                null, 1, 1, 2, new BigDecimal("200"), "RON", null, null, false);
 
         // The full natural-language phrase matches nothing (LIKE on the
         // whole phrase fails because of "din" in the middle) ...

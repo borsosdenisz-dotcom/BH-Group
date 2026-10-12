@@ -53,6 +53,7 @@ public record PropertyResponse(
         List<PropertyPhotoResponse> photos,
         List<PropertyDocumentResponse> documents,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        boolean demo
 ) {
 }

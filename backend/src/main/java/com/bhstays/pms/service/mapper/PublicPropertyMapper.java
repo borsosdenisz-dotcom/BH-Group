@@ -47,7 +47,8 @@ public class PublicPropertyMapper {
                 property.getBasePricePerNight(),
                 DEFAULT_CURRENCY,
                 coverUrl,
-                property.getFacilities()
+                property.getFacilities(),
+                property.isDemo()
         );
     }
 
@@ -75,7 +76,8 @@ public class PublicPropertyMapper {
                 property.getCheckInTime(),
                 property.getCheckOutTime(),
                 property.getFacilities(),
-                photos.stream().map(propertyMapper::toPhotoResponse).toList()
+                photos.stream().map(propertyMapper::toPhotoResponse).toList(),
+                property.isDemo()
         );
     }
 
