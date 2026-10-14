@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Building2 } from "lucide-react"
 import { ThemeToggle } from "@/components/layout/theme-toggle"
 import { SiteBackgroundVideo } from "@/components/marketing/site-background-video"
@@ -13,6 +14,9 @@ export default function BookLayout({
   children: React.ReactNode
 }) {
   const cinematicEnabled = useCinematicBackgroundEnabled()
+  // The listings page sets its own gutters on a wider container; the other
+  // /book pages rely on these.
+  const ownGutters = usePathname() === "/book"
 
   return (
     <div className={cn("flex min-h-screen flex-col", !cinematicEnabled && "bg-background")}>
@@ -26,7 +30,7 @@ export default function BookLayout({
         </Link>
         <ThemeToggle />
       </header>
-      <main className="flex-1 px-6 py-8">{children}</main>
+      <main className={cn("flex-1 py-8", !ownGutters && "px-6")}>{children}</main>
       <footer className="flex items-center justify-center gap-4 px-6 py-6 text-center text-xs text-muted-foreground">
         <span>© {new Date().getFullYear()} BH Stays. Toate drepturile rezervate.</span>
         <Link href="/login" className="text-muted-foreground/70 hover:text-foreground">
