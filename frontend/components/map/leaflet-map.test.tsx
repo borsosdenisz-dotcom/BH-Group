@@ -11,7 +11,7 @@ const leaflet = vi.hoisted(() => {
     panTo: vi.fn(),
     remove: vi.fn(),
     invalidateSize: vi.fn(),
-    getBounds: vi.fn(() => ({ contains: () => true })),
+    getBounds: vi.fn((): { contains: (point: unknown) => boolean } => ({ contains: () => true })),
   }
   const layer = { clearLayers: vi.fn() }
   const makeMarker = () => {
@@ -48,9 +48,10 @@ vi.mock("leaflet", () => ({
 
 // jsdom lays nothing out; the map only frames markers once it has a size.
 const sizeProps = ["clientWidth", "clientHeight"] as const
+let layoutSize = 400
 beforeAll(() => {
   for (const prop of sizeProps) {
-    Object.defineProperty(HTMLElement.prototype, prop, { configurable: true, get: () => 400 })
+    Object.defineProperty(HTMLElement.prototype, prop, { configurable: true, get: () => layoutSize })
   }
 })
 afterAll(() => {
@@ -61,6 +62,8 @@ afterAll(() => {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  leaflet.map.getBounds.mockImplementation(() => ({ contains: () => true }))
+  layoutSize = 400
 })
 
 describe("LeafletMap", () => {
@@ -138,5 +141,46 @@ describe("LeafletMap", () => {
     await waitFor(() => expect(leaflet.marker).toHaveBeenCalled())
     const marker = leaflet.marker.mock.results[0].value as { bindPopup: ReturnType<typeof vi.fn> }
     expect(marker.bindPopup).toHaveBeenCalledWith(expect.stringContaining("&lt;b&gt;x&lt;/b&gt;"))
+  })
+
+  /**
+   * Below lg the listings map is mounted hidden (display: none) until "Arată
+   * harta", so Leaflet never gets a center and zoom. A tap on a property card
+   * still fires mouseenter on touch devices, which highlights its pin - and
+   * Leaflet's getBounds() throws "Set map center and zoom first." on a map
+   * with no view. That crashed /book on every phone instead of opening the
+   * property.
+   */
+  it("highlights without panning while the map is hidden and has no view yet", async () => {
+    layoutSize = 0
+    leaflet.map.getBounds.mockImplementation(() => {
+      throw new Error("Set map center and zoom first.")
+    })
+    const markers = [
+      { id: "a", lat: 46.77, lng: 23.62, label: "A", price: "250 RON" },
+      { id: "b", lat: 46.75, lng: 23.59, label: "B", price: "300 RON" },
+    ]
+    const { rerender } = render(<LeafletMap markers={markers} activeId={null} />)
+    await waitFor(() => expect(leaflet.marker).toHaveBeenCalledTimes(2))
+    expect(leaflet.map.fitBounds).not.toHaveBeenCalled()
+
+    expect(() => rerender(<LeafletMap markers={markers} activeId="a" />)).not.toThrow()
+    expect(leaflet.map.getBounds).not.toHaveBeenCalled()
+    expect(leaflet.map.panTo).not.toHaveBeenCalled()
+    const pinA = leaflet.marker.mock.results[0].value as { setZIndexOffset: ReturnType<typeof vi.fn> }
+    expect(pinA.setZIndexOffset).toHaveBeenLastCalledWith(1000)
+  })
+
+  it("pans to an off-screen pin once the map has been framed", async () => {
+    leaflet.map.getBounds.mockImplementation(() => ({ contains: () => false }))
+    const markers = [
+      { id: "a", lat: 46.77, lng: 23.62, label: "A", price: "250 RON" },
+      { id: "b", lat: 46.75, lng: 23.59, label: "B", price: "300 RON" },
+    ]
+    const { rerender } = render(<LeafletMap markers={markers} activeId={null} />)
+    await waitFor(() => expect(leaflet.map.fitBounds).toHaveBeenCalled())
+
+    rerender(<LeafletMap markers={markers} activeId="b" />)
+    expect(leaflet.map.panTo).toHaveBeenCalledTimes(1)
   })
 })
