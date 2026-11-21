@@ -6,6 +6,7 @@ package com.bhstays.pms.dto.payment;
  * the server.
  */
 public record PaymentConfigResponse(
+        boolean directBookingEnabled,
         boolean cardPaymentsEnabled,
         String publishableKey
 ) {

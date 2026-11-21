@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.context.TestPropertySource;
 
 /**
  * Public booking is card-only. With no Stripe configured (this context sets
@@ -30,6 +31,7 @@ import org.springframework.test.web.servlet.MockMvc;
  * looks confirmed.
  */
 @AutoConfigureMockMvc
+@TestPropertySource(properties = "app.public-direct-booking-enabled=true")
 class PublicBookingWithoutStripeIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
@@ -77,7 +79,8 @@ class PublicBookingWithoutStripeIntegrationTest extends AbstractIntegrationTest 
     void theSiteReportsCardPaymentAsUnavailable() throws Exception {
         mockMvc.perform(get("/api/v1/public/payments/config"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.cardPaymentsEnabled").value(false));
+                .andExpect(jsonPath("$.data.cardPaymentsEnabled").value(false))
+                .andExpect(jsonPath("$.data.directBookingEnabled").value(false));
     }
 
     @Test

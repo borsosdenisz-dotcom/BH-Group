@@ -42,11 +42,17 @@ describe("BookingContent", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockSearchParams.value = new URLSearchParams()
-    getProperty.mockResolvedValue({ id: "prop-1", name: "Apartament Test" })
+    getProperty.mockResolvedValue({
+      id: "prop-1",
+      name: "Apartament Test",
+      demo: false,
+      airbnbListingUrl: null,
+      bookingListingUrl: null,
+    })
   })
 
   it("offers card as the only way to pay when Stripe is active - no transfer, on-arrival or manual approval", async () => {
-    getPaymentConfig.mockResolvedValue({ cardPaymentsEnabled: true, publishableKey: "pk_test" })
+    getPaymentConfig.mockResolvedValue({ directBookingEnabled: true, cardPaymentsEnabled: true, publishableKey: "pk_test" })
 
     renderWithProviders(<BookingContent id="prop-1" />)
 
@@ -58,7 +64,7 @@ describe("BookingContent", () => {
   })
 
   it("sends the guest straight to Stripe Checkout once the booking is held, and locks the form", async () => {
-    getPaymentConfig.mockResolvedValue({ cardPaymentsEnabled: true, publishableKey: "pk_test" })
+    getPaymentConfig.mockResolvedValue({ directBookingEnabled: true, cardPaymentsEnabled: true, publishableKey: "pk_test" })
     const user = userEvent.setup()
 
     renderWithProviders(<BookingContent id="prop-1" />)
@@ -73,8 +79,14 @@ describe("BookingContent", () => {
   })
 
   it("shows the demo banner and no booking form for a demo property, even with card payment active", async () => {
-    getPaymentConfig.mockResolvedValue({ cardPaymentsEnabled: true, publishableKey: "pk_test" })
-    getProperty.mockResolvedValue({ id: "prop-1", name: "Apartament Demo", demo: true })
+    getPaymentConfig.mockResolvedValue({ directBookingEnabled: true, cardPaymentsEnabled: true, publishableKey: "pk_test" })
+    getProperty.mockResolvedValue({
+      id: "prop-1",
+      name: "Apartament Demo",
+      demo: true,
+      airbnbListingUrl: "https://www.airbnb.com/rooms/123",
+      bookingListingUrl: null,
+    })
 
     renderWithProviders(<BookingContent id="prop-1" />)
 
@@ -84,15 +96,14 @@ describe("BookingContent", () => {
     expect(screen.queryByText(/Plata se face online, cu cardul/)).not.toBeInTheDocument()
   })
 
-  it("disables booking entirely and shows the contact details when card payment is unavailable", async () => {
-    getPaymentConfig.mockResolvedValue({ cardPaymentsEnabled: false, publishableKey: null })
+  it("uses the availability lead flow when direct booking is disabled and no OTA link exists", async () => {
+    getPaymentConfig.mockResolvedValue({ directBookingEnabled: false, cardPaymentsEnabled: true, publishableKey: "pk_test" })
 
     renderWithProviders(<BookingContent id="prop-1" />)
 
-    expect(await screen.findByText("Rezervarea online nu este momentan disponibilă.")).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: "formularul de contact" })).toBeInTheDocument()
+    expect(await screen.findByRole("button", { name: "Solicită disponibilitatea" })).toBeEnabled()
     expect(bookingFormRendered).not.toHaveBeenCalled()
-    expect(screen.queryByRole("button", { name: /Continuă|Trimite/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Continuă către plată/ })).not.toBeInTheDocument()
     expect(redirectToExternal).not.toHaveBeenCalled()
   })
 
@@ -101,7 +112,7 @@ describe("BookingContent", () => {
 
     renderWithProviders(<BookingContent id="prop-1" />)
 
-    expect(await screen.findByText("Rezervarea online nu este momentan disponibilă.")).toBeInTheDocument()
+    expect(await screen.findByRole("button", { name: "Solicită disponibilitatea" })).toBeEnabled()
     expect(bookingFormRendered).not.toHaveBeenCalled()
   })
 })

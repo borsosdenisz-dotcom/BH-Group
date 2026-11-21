@@ -15,6 +15,7 @@ import com.bhstays.pms.common.exception.ApiException;
 import com.bhstays.pms.common.exception.BadRequestException;
 import com.bhstays.pms.common.exception.DemoPropertyException;
 import com.bhstays.pms.common.exception.ServiceUnavailableException;
+import com.bhstays.pms.config.AppProperties;
 import com.bhstays.pms.domain.Property;
 import com.bhstays.pms.domain.Reservation;
 import com.bhstays.pms.dto.payment.CheckoutSessionResponse;
@@ -67,8 +68,14 @@ class PublicReservationServiceTest {
     }
 
     private PublicReservationService serviceWithStripe(boolean stripeConfigured) {
+        return service(stripeConfigured, true);
+    }
+
+    private PublicReservationService service(boolean stripeConfigured, boolean directBookingEnabled) {
+        AppProperties appProperties = new AppProperties();
+        appProperties.setPublicDirectBookingEnabled(directBookingEnabled);
         return new PublicReservationService(reservationService, publicReservationMapper, pricingService,
-                propertyRepository, messageService,
+                propertyRepository, messageService, appProperties,
                 stripeConfigured ? Optional.of(stripeCheckoutService) : Optional.empty());
     }
 
@@ -122,6 +129,16 @@ class PublicReservationServiceTest {
     }
 
     @Test
+    void createBooking_withTheLaunchFlagOff_isBlockedBeforeAnyHoldEvenWhenStripeExists() {
+        assertThatThrownBy(() -> service(true, false).createBooking(request("ONLINE_CARD")))
+                .isInstanceOf(ServiceUnavailableException.class)
+                .satisfies(ex -> assertThat(((ApiException) ex).getErrorCode())
+                        .isEqualTo(PublicReservationService.DIRECT_BOOKING_DISABLED));
+
+        verifyNoInteractions(reservationService, stripeCheckoutService);
+    }
+
+    @Test
     void createBooking_whenStripeCannotOpenTheSession_failsSoTheHoldIsRolledBack() {
         when(reservationService.createGuestBooking(any(), anyString(), anyString(), anyString(), anyString(),
                 any(), any(), anyInt(), any(), any())).thenReturn(reservation);
@@ -142,6 +159,19 @@ class PublicReservationServiceTest {
 
         assertThatThrownBy(() -> serviceWithStripe(false).createCheckoutSession("tok-1"))
                 .isInstanceOf(ServiceUnavailableException.class);
+    }
+
+    @Test
+    void createCheckoutSession_withTheLaunchFlagOff_isBlockedBeforeStripe() {
+        reservation.setProperty(Property.builder().name("Normal").build());
+        when(reservationService.getByManagementToken("tok-1")).thenReturn(reservation);
+
+        assertThatThrownBy(() -> service(true, false).createCheckoutSession("tok-1"))
+                .isInstanceOf(ServiceUnavailableException.class)
+                .satisfies(ex -> assertThat(((ApiException) ex).getErrorCode())
+                        .isEqualTo(PublicReservationService.DIRECT_BOOKING_DISABLED));
+
+        verifyNoInteractions(stripeCheckoutService);
     }
 
     // ------------------------------------------------------------------

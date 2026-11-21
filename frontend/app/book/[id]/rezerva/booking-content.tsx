@@ -7,24 +7,22 @@ import { ArrowLeft, Loader2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { BookingForm } from "@/components/booking/booking-form"
 import { DemoPropertyBanner } from "@/components/booking/demo-property-banner"
-import { OnlineBookingUnavailable } from "@/components/booking/online-booking-unavailable"
+import { OtaBookingActions } from "@/components/booking/ota-booking-actions"
 import { usePaymentConfig, usePublicProperty } from "@/hooks/use-public-booking"
 import { redirectToExternal } from "@/lib/redirect"
 import type { PublicBookingCheckoutResponse } from "@/lib/api/types"
 
 /**
- * Public booking is card-only. Submitting the form holds the dates and opens
- * Stripe Checkout in a single backend call, and the guest goes straight
- * there. Without online card payment there is no public booking at all:
- * the form is not shown, nothing is held, and the guest gets the contact
- * details instead.
+ * Direct booking is shown only when the backend confirms the OTA-first flag
+ * and Stripe are both active. Otherwise no public hold is created and the
+ * guest is directed to the configured OTA listing or the existing lead form.
  */
 function BookingInner({ id }: { id: string }) {
   const searchParams = useSearchParams()
   const { data: property, isLoading } = usePublicProperty(id)
   const { data: paymentConfig, isLoading: paymentConfigLoading } = usePaymentConfig()
   const [redirecting, setRedirecting] = useState(false)
-  const onlineBookingAvailable = paymentConfig?.cardPaymentsEnabled === true && property?.demo !== true
+  const onlineBookingAvailable = paymentConfig?.directBookingEnabled === true && property?.demo !== true
 
   function handleBookingHeld(booking: PublicBookingCheckoutResponse) {
     setRedirecting(true)
@@ -66,7 +64,9 @@ function BookingInner({ id }: { id: string }) {
           <ArrowLeft className="size-3.5" />
           Înapoi la {property.name}
         </Link>
-        <h1 className="text-xl font-semibold tracking-tight">Rezervă — {property.name}</h1>
+        <h1 className="text-xl font-semibold tracking-tight">
+          {onlineBookingAvailable ? "Rezervă" : "Verifică disponibilitatea"} — {property.name}
+        </h1>
         {onlineBookingAvailable && (
           <p className="mt-1 text-sm text-muted-foreground">
             Plata se face online, cu cardul. După ce completezi datele, reținem perioada pentru tine și te
@@ -87,7 +87,7 @@ function BookingInner({ id }: { id: string }) {
           onSuccess={handleBookingHeld}
         />
       ) : (
-        <OnlineBookingUnavailable />
+        <OtaBookingActions property={property} />
       )}
     </div>
   )

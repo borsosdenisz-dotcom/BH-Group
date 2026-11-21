@@ -27,7 +27,7 @@ const FAQS = [
   {
     question: "Pe ce platforme listați proprietatea?",
     answer:
-      "Publicăm proprietățile pe canalele de distribuție relevante și prin rezervare directă pe platforma noastră; disponibilitatea exactă pe fiecare canal se stabilește proprietate cu proprietate.",
+      "În etapa OTA-first, anunțurile pot fi administrate pe Airbnb și Booking.com, în funcție de proprietate. Site-ul BH Stays prezintă proprietățile, iar rezervarea se finalizează pe platforma indicată.",
   },
   {
     question: "Cât durează până apare prima rezervare?",

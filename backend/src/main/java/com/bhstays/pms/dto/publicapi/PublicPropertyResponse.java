@@ -35,6 +35,8 @@ public record PublicPropertyResponse(
         Set<Facility> facilities,
         List<PropertyPhotoResponse> photos,
         /** Showcase listing: shown for illustration only, cannot be quoted, booked or paid. */
-        boolean demo
+        boolean demo,
+        String airbnbListingUrl,
+        String bookingListingUrl
 ) {
 }

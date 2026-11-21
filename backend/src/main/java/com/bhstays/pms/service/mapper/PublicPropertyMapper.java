@@ -77,7 +77,9 @@ public class PublicPropertyMapper {
                 property.getCheckOutTime(),
                 property.getFacilities(),
                 photos.stream().map(propertyMapper::toPhotoResponse).toList(),
-                property.isDemo()
+                property.isDemo(),
+                property.getAirbnbListingUrl(),
+                property.getBookingListingUrl()
         );
     }
 

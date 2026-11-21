@@ -1,6 +1,7 @@
 package com.bhstays.pms.controller;
 
 import com.bhstays.pms.common.response.ApiResponse;
+import com.bhstays.pms.config.AppProperties;
 import com.bhstays.pms.dto.payment.PaymentConfigResponse;
 import com.bhstays.pms.payment.StripeGateway;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,12 +26,15 @@ public class PublicPaymentController {
 
     /** Absent when no Stripe key is configured - card payments are then reported as off. */
     private final Optional<StripeGateway> stripeGateway;
+    private final AppProperties appProperties;
 
     @GetMapping("/config")
     @Operation(summary = "Which payment methods the booking site can offer")
     public ResponseEntity<ApiResponse<PaymentConfigResponse>> config() {
-        return ResponseEntity.ok(ApiResponse.success(stripeGateway
-                .map(gateway -> new PaymentConfigResponse(true, gateway.publishableKey()))
-                .orElseGet(() -> new PaymentConfigResponse(false, null))));
+        boolean cardPaymentsEnabled = stripeGateway.isPresent();
+        boolean directBookingEnabled = appProperties.isPublicDirectBookingEnabled() && cardPaymentsEnabled;
+        String publishableKey = stripeGateway.map(StripeGateway::publishableKey).orElse(null);
+        return ResponseEntity.ok(ApiResponse.success(
+                new PaymentConfigResponse(directBookingEnabled, cardPaymentsEnabled, publishableKey)));
     }
 }

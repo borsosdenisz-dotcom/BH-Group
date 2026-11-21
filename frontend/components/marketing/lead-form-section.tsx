@@ -164,7 +164,7 @@ export function LeadFormSection() {
                 )}
               />
               <Button type="submit" size="lg" className="w-full" disabled={createLead.isPending}>
-                {createLead.isPending ? "Se trimite..." : "Trimite datele"}
+                {createLead.isPending ? "Se trimite..." : "Solicită o evaluare gratuită"}
               </Button>
             </form>
           </Form>

@@ -74,6 +74,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
  */
 @TestPropertySource(properties = {
         "app.stripe.secret-key=sk_test_integration_dummy",
+        "app.public-direct-booking-enabled=true",
         "app.stripe.publishable-key=pk_test_integration_dummy",
         "app.stripe.webhook-secret=" + PropertyCommissionReportingIntegrationTest.WEBHOOK_SECRET
 })

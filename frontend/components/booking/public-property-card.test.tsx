@@ -36,4 +36,12 @@ describe("PublicPropertyCard", () => {
 
     expect(screen.queryByText("Demo")).not.toBeInTheDocument()
   })
+
+  it("uses a neutral property CTA and never promises direct booking", () => {
+    renderWithProviders(<PublicPropertyCard property={summary()} />)
+
+    expect(screen.getByText("Vezi proprietatea")).toBeInTheDocument()
+    expect(screen.getByText("Disponibilitate verificată pe platforma de rezervare")).toBeInTheDocument()
+    expect(screen.queryByText("Rezervă acum")).not.toBeInTheDocument()
+  })
 })

@@ -1,6 +1,8 @@
 "use client"
 
 import Image from "next/image"
+import { LeadDialog } from "@/components/marketing/lead-dialog"
+import { buttonVariants } from "@/components/ui/button"
 import { useCinematicBackgroundEnabled } from "@/hooks/use-cinematic-background-enabled"
 import { cn } from "@/lib/utils"
 
@@ -42,12 +44,20 @@ export function PentruProprietariHero() {
           Pentru proprietari
         </span>
         <h1 className="max-w-2xl text-balance font-heading text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
-          Proprietatea ta, administrată ca un hotel de 5 stele.
+          Administrare atentă pentru proprietatea ta.
         </h1>
         <p className="max-w-xl text-balance text-lg text-white/75">
-          Curățenie, prețuri adaptate sezonului, comunicare cu oaspeții și rapoarte financiare —
-          ne ocupăm de tot, tu încasezi venitul.
+          Administrăm anunțurile, comunicarea cu oaspeții, operațiunile sejurului și raportarea,
+          pe baza serviciilor stabilite împreună.
         </p>
+        <LeadDialog
+          submitLabel="Trimite solicitarea"
+          trigger={
+            <button type="button" className={cn(buttonVariants({ size: "lg" }), "w-fit")}>
+              Solicită o evaluare gratuită
+            </button>
+          }
+        />
       </div>
     </section>
   )

@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { BookingContent } from "./booking-content"
 
 export const metadata: Metadata = {
-  title: "Rezervă",
+  title: "Verifică disponibilitatea",
 }
 
 export default async function BookingPage({

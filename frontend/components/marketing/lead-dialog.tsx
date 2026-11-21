@@ -40,14 +40,35 @@ const leadSchema = z.object({
 
 type LeadFormValues = z.infer<typeof leadSchema>
 
-export function LeadDialog({ trigger }: { trigger: ReactNode }) {
+interface LeadDialogProps {
+  trigger: ReactNode
+  title?: string
+  description?: string
+  defaultMessage?: string
+  submitLabel?: string
+}
+
+export function LeadDialog({
+  trigger,
+  title = "Listează-ți proprietatea",
+  description = "Lasă-ne datele tale de contact — revenim cât mai curând cu o evaluare.",
+  defaultMessage = "",
+  submitLabel = "Trimite",
+}: LeadDialogProps) {
   const [open, setOpen] = useState(false)
   const [honeypot, setHoneypot] = useState("")
   const createLead = useCreateLead()
   const utm = useUtmParams()
   const form = useForm<LeadFormValues>({
     resolver: zodResolver(leadSchema),
-    defaultValues: { fullName: "", email: "", phone: "", city: "", message: "", consentGiven: false },
+    defaultValues: {
+      fullName: "",
+      email: "",
+      phone: "",
+      city: "",
+      message: defaultMessage,
+      consentGiven: false,
+    },
   })
 
   function onSubmit(values: LeadFormValues) {
@@ -66,7 +87,14 @@ export function LeadDialog({ trigger }: { trigger: ReactNode }) {
       },
       {
         onSuccess: () => {
-          form.reset()
+          form.reset({
+            fullName: "",
+            email: "",
+            phone: "",
+            city: "",
+            message: defaultMessage,
+            consentGiven: false,
+          })
           setOpen(false)
         },
       }
@@ -78,10 +106,8 @@ export function LeadDialog({ trigger }: { trigger: ReactNode }) {
       <DialogTrigger render={trigger as React.ReactElement} />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Listează-ți proprietatea</DialogTitle>
-          <DialogDescription>
-            Lasă-ne datele tale de contact — revenim cât mai curând cu o estimare de venit.
-          </DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
@@ -173,7 +199,7 @@ export function LeadDialog({ trigger }: { trigger: ReactNode }) {
               )}
             />
             <Button type="submit" className="w-full" disabled={createLead.isPending}>
-              {createLead.isPending ? "Se trimite..." : "Trimite"}
+              {createLead.isPending ? "Se trimite..." : submitLabel}
             </Button>
           </form>
         </Form>

@@ -39,6 +39,7 @@ import {
 } from "@/lib/property-labels"
 import { useUsers } from "@/hooks/use-users"
 import { commissionPercentSchema } from "@/lib/commission"
+import { isValidOtaListingUrl } from "@/lib/ota-listing-url"
 import type { PropertyPayload } from "@/lib/api/properties"
 import type { PropertyResponse } from "@/lib/api/types"
 
@@ -87,6 +88,22 @@ const propertySchema = z.object({
   lateCheckoutTime: z.string().optional(),
   lateCheckoutFee: z.coerce.number().min(0).optional(),
   demo: z.boolean(),
+  airbnbListingUrl: z
+    .string()
+    .max(500)
+    .refine(
+      (value) => isValidOtaListingUrl(value, "AIRBNB"),
+      "Introdu un URL HTTPS de pe un domeniu oficial Airbnb"
+    )
+    .optional(),
+  bookingListingUrl: z
+    .string()
+    .max(500)
+    .refine(
+      (value) => isValidOtaListingUrl(value, "BOOKING"),
+      "Introdu un URL HTTPS de pe domeniul oficial Booking.com"
+    )
+    .optional(),
 })
 
 export type PropertyFormValues = z.infer<typeof propertySchema>
@@ -133,6 +150,8 @@ function toFormValues(property?: PropertyResponse): PropertyFormValues {
       lateCheckoutTime: "14:00",
       lateCheckoutFee: undefined,
       demo: false,
+      airbnbListingUrl: "",
+      bookingListingUrl: "",
     }
   }
 
@@ -176,6 +195,8 @@ function toFormValues(property?: PropertyResponse): PropertyFormValues {
     lateCheckoutTime: property.lateCheckoutTime?.slice(0, 5) ?? "14:00",
     lateCheckoutFee: property.lateCheckoutFee ?? undefined,
     demo: property.demo,
+    airbnbListingUrl: property.airbnbListingUrl ?? "",
+    bookingListingUrl: property.bookingListingUrl ?? "",
   }
 }
 
@@ -224,6 +245,8 @@ export function propertyFormValuesToPayload(
     lateCheckoutTime: values.lateCheckoutTime ? `${values.lateCheckoutTime}:00` : null,
     lateCheckoutFee: values.lateCheckoutFee ?? null,
     demo: values.demo,
+    airbnbListingUrl: values.airbnbListingUrl?.trim() || null,
+    bookingListingUrl: values.bookingListingUrl?.trim() || null,
   }
 }
 
@@ -341,6 +364,58 @@ export function PropertyForm({ property, mode, onSubmit, isSubmitting }: Propert
                     Apare pe site cu eticheta „Demo”, dar nu poate fi rezervat sau plătit și nu este
                     indexat de motoarele de căutare.
                   </p>
+                </FormItem>
+              )}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Platforme de rezervare</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="airbnbListingUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Link anunț Airbnb</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="url"
+                      inputMode="url"
+                      autoComplete="url"
+                      placeholder="https://www.airbnb.com/rooms/..."
+                      {...field}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    Opțional. Este acceptat numai un link HTTPS de pe un domeniu oficial Airbnb.
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="bookingListingUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Link anunț Booking.com</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="url"
+                      inputMode="url"
+                      autoComplete="url"
+                      placeholder="https://www.booking.com/hotel/..."
+                      {...field}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    Opțional. Este acceptat numai un link HTTPS de pe domeniul oficial Booking.com.
+                  </p>
+                  <FormMessage />
                 </FormItem>
               )}
             />

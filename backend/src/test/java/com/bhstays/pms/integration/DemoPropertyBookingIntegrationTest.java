@@ -64,7 +64,8 @@ import org.springframework.test.web.servlet.MockMvc;
 @TestPropertySource(properties = {
         "app.stripe.secret-key=sk_test_integration_dummy",
         "app.stripe.publishable-key=pk_test_integration_dummy",
-        "app.stripe.webhook-secret=" + DemoPropertyBookingIntegrationTest.WEBHOOK_SECRET
+        "app.stripe.webhook-secret=" + DemoPropertyBookingIntegrationTest.WEBHOOK_SECRET,
+        "app.public-direct-booking-enabled=true"
 })
 @AutoConfigureMockMvc
 class DemoPropertyBookingIntegrationTest extends AbstractIntegrationTest {

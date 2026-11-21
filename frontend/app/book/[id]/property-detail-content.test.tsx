@@ -43,6 +43,8 @@ function property(overrides: Partial<PublicPropertyResponse> = {}): PublicProper
     facilities: [],
     photos: [],
     demo: false,
+    airbnbListingUrl: null,
+    bookingListingUrl: null,
     ...overrides,
   }
 }
@@ -69,7 +71,7 @@ describe("PropertyDetailContent", () => {
     vi.clearAllMocks()
     // Dates already chosen - a bookable property would offer "Rezervă" now.
     mockSearchParams.value = new URLSearchParams("checkIn=2031-09-01&checkOut=2031-09-05&guests=2")
-    getPaymentConfig.mockResolvedValue({ cardPaymentsEnabled: true, publishableKey: "pk_test" })
+    getPaymentConfig.mockResolvedValue({ directBookingEnabled: true, cardPaymentsEnabled: true, publishableKey: "pk_test" })
     getQuote.mockResolvedValue(availableQuote)
   })
 
@@ -96,5 +98,17 @@ describe("PropertyDetailContent", () => {
     await waitFor(() => expect(screen.getAllByRole("link", { name: "Rezervă" }).length).toBeGreaterThan(0))
     expect(screen.queryByText("Anunț demonstrativ – nu se poate rezerva")).not.toBeInTheDocument()
     expect(getQuote).toHaveBeenCalled()
+  })
+
+  it("does not render or quote direct booking when the OTA-first flag is disabled", async () => {
+    getPaymentConfig.mockResolvedValue({ directBookingEnabled: false, cardPaymentsEnabled: true, publishableKey: "pk_test" })
+    getProperty.mockResolvedValue(property())
+
+    renderWithProviders(<PropertyDetailContent id="prop-1" />)
+
+    expect(await screen.findByRole("button", { name: "Solicită disponibilitatea" })).toBeEnabled()
+    expect(screen.queryByRole("link", { name: "Rezervă" })).not.toBeInTheDocument()
+    expect(screen.getByText("Tarif orientativ")).toBeInTheDocument()
+    expect(getQuote).not.toHaveBeenCalled()
   })
 })

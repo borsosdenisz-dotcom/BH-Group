@@ -30,6 +30,8 @@ export function MobileBookingBar({
   bookingHref,
   onlineBookingAvailable = true,
 }: MobileBookingBarProps) {
+  if (!onlineBookingAvailable) return null
+
   const hasDates = !!checkIn && !!checkOut
 
   const ctaState = !hasDates

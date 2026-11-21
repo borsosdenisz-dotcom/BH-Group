@@ -2,10 +2,17 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Building2 } from "lucide-react"
+import { Building2, Menu } from "lucide-react"
 import { motion } from "motion/react"
-import { buttonVariants } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/layout/theme-toggle"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 
 const NAV_LINKS = [
@@ -16,6 +23,7 @@ const NAV_LINKS = [
 
 export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -67,9 +75,52 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Link href="/book" className={cn(buttonVariants({ size: "sm" }))}>
-            Rezervă acum
+          <Link href="/book" className={cn(buttonVariants({ size: "sm" }), "hidden sm:inline-flex")}>
+            Vezi proprietăți
           </Link>
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn("md:hidden", !scrolled && "text-white hover:bg-white/10 hover:text-white")}
+                  aria-label="Deschide meniul"
+                />
+              }
+            >
+              <Menu className="size-5" aria-hidden="true" />
+            </SheetTrigger>
+            <SheetContent side="right" className="w-72">
+              <SheetHeader className="border-b border-border/60">
+                <SheetTitle className="flex items-center gap-2">
+                  <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                    <Building2 className="size-3.5" aria-hidden="true" />
+                  </span>
+                  BH Stays
+                </SheetTitle>
+              </SheetHeader>
+              <nav aria-label="Navigație mobilă" className="flex flex-col gap-1 px-3">
+                {NAV_LINKS.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+                <Link
+                  href="/book"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(buttonVariants(), "mt-3")}
+                >
+                  Vezi proprietăți
+                </Link>
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </motion.header>

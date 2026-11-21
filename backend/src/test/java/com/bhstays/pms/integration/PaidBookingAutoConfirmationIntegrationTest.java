@@ -90,6 +90,7 @@ import org.springframework.test.web.servlet.MockMvc;
  */
 @TestPropertySource(properties = {
         "app.stripe.secret-key=sk_test_integration_dummy",
+        "app.public-direct-booking-enabled=true",
         "app.stripe.publishable-key=pk_test_integration_dummy",
         "app.stripe.webhook-secret=" + PaidBookingAutoConfirmationIntegrationTest.WEBHOOK_SECRET
 })

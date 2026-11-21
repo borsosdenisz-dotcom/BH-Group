@@ -139,7 +139,7 @@ class PropertyServiceTest {
                 null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,
                 false, null, null, false, null, null,
-                true);
+                true, null, null);
 
         propertyService.create(demo);
         propertyService.create(bookable);
@@ -168,7 +168,7 @@ class PropertyServiceTest {
                 null, null, null, null, null, null, null, null, null,
                 // smartLock*, lateCheckout*, demo
                 false, null, null, false, null, null,
-                demo);
+                demo, null, null);
     }
 
     private PropertyCreateRequest createRequest(boolean lateCheckoutEnabled, LocalTime lateCheckoutTime,
@@ -188,7 +188,9 @@ class PropertyServiceTest {
                 // smartLockEnabled, smartLockProvider, smartLockDeviceId,
                 false, null, null,
                 // lateCheckoutEnabled, lateCheckoutTime, lateCheckoutFee, demo
-                lateCheckoutEnabled, lateCheckoutTime, lateCheckoutFee, false);
+                lateCheckoutEnabled, lateCheckoutTime, lateCheckoutFee, false,
+                // optional OTA listing URLs
+                null, null);
     }
 
     // ------------------------------------------------------------------

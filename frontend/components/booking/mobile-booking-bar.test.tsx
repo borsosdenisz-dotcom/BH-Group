@@ -28,6 +28,8 @@ const baseProperty: PublicPropertyResponse = {
   facilities: [],
   photos: [],
   demo: false,
+  airbnbListingUrl: null,
+  bookingListingUrl: null,
 }
 
 const baseQuote: PriceQuoteResponse = {
@@ -105,9 +107,9 @@ describe("MobileBookingBar", () => {
     expect(screen.getByRole("button", { name: "Indisponibilă" })).toBeDisabled()
   })
 
-  it("disables the CTA when online card payment is unavailable, even for an available quote", () => {
+  it("does not render a direct-booking bar when direct booking is unavailable", () => {
     renderBar({ checkIn: "2026-09-01", checkOut: "2026-09-05", quote: baseQuote, onlineBookingAvailable: false })
-    expect(screen.getByRole("button", { name: "Rezervare online indisponibilă" })).toBeDisabled()
+    expect(screen.queryByText("1.200 RON")).not.toBeInTheDocument()
     expect(screen.queryByRole("link", { name: "Rezervă" })).not.toBeInTheDocument()
   })
 

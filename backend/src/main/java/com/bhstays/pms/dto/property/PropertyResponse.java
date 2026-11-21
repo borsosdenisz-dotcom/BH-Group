@@ -54,6 +54,8 @@ public record PropertyResponse(
         List<PropertyDocumentResponse> documents,
         Instant createdAt,
         Instant updatedAt,
-        boolean demo
+        boolean demo,
+        String airbnbListingUrl,
+        String bookingListingUrl
 ) {
 }

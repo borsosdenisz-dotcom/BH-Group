@@ -19,6 +19,8 @@ import java.util.UUID;
 
 import com.bhstays.pms.domain.Address;
 import com.bhstays.pms.domain.Property;
+import com.bhstays.pms.validation.OtaPlatform;
+import com.bhstays.pms.validation.ValidOtaListingUrl;
 public record PropertyUpdateRequest(
 
         @NotBlank(message = "Name is required")
@@ -102,6 +104,16 @@ public record PropertyUpdateRequest(
         BigDecimal lateCheckoutFee,
 
         /** Showcase listing: visible publicly, never bookable or payable. */
-        boolean demo
+        boolean demo,
+
+        @Size(max = 500)
+        @ValidOtaListingUrl(platform = OtaPlatform.AIRBNB,
+                message = "Introdu un URL HTTPS de pe un domeniu oficial Airbnb")
+        String airbnbListingUrl,
+
+        @Size(max = 500)
+        @ValidOtaListingUrl(platform = OtaPlatform.BOOKING,
+                message = "Introdu un URL HTTPS de pe domeniul oficial Booking.com")
+        String bookingListingUrl
 ) {
 }

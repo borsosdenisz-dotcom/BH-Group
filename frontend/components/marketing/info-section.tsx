@@ -7,25 +7,25 @@ const INFO_ITEMS = [
   {
     icon: Clock,
     title: "Check-in & check-out",
-    description: "Orele de check-in și check-out variază pe proprietate — le vezi clar pe pagina fiecărui anunț, înainte de a trimite cererea.",
+    description: "Orele de check-in și check-out variază pe proprietate — le vezi clar pe pagina fiecărui anunț, înainte de rezervare.",
     color: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
   },
   {
     icon: ShieldCheck,
     title: "Politică de anulare",
-    description: "Fiecare proprietate are propria politică de anulare (flexibilă, moderată, strictă sau nerambursabilă), afișată clar pe pagina anunțului, înainte de a trimite cererea.",
+    description: "Condițiile finale de anulare și plată se verifică pe platforma externă pe care finalizezi rezervarea.",
     color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
   },
   {
     icon: CreditCard,
-    title: "Fără plată la cerere",
-    description: "Trimiți doar o cerere de rezervare — nu se percepe nimic în acest pas. Modalitatea de plată se stabilește cu echipa după confirmare.",
+    title: "Rezervare pe platforma indicată",
+    description: "BH Stays prezintă proprietatea, iar disponibilitatea, plata și confirmarea se verifică pe platforma externă indicată în anunț.",
     color: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
   },
   {
     icon: Sparkles,
     title: "Curățenie inclusă",
-    description: "Fiecare sejur include curățenie și lenjerie/prosoape curate. Dacă se aplică o taxă de curățenie, apare defalcat, separat, în cererea de rezervare.",
+    description: "Fiecare sejur include curățenie și lenjerie/prosoape curate. Eventualele taxe apar în condițiile finale ale platformei de rezervare.",
     color: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   },
   {

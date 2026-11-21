@@ -3,6 +3,10 @@
 Platformă de Property Management pentru închirieri pe termen scurt (Airbnb, Booking.com
 și rezervări directe), construită pentru scalare internațională.
 
+Fluxul public pornește în mod OTA-first, cu rezervarea directă dezactivată implicit.
+Configurarea, condițiile de activare și rollback-ul sunt documentate în
+[docs/OTA_FIRST.md](docs/OTA_FIRST.md).
+
 ## Stack tehnologic
 
 **Frontend**: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS v4, shadcn/ui,

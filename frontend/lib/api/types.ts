@@ -218,6 +218,8 @@ export interface PropertyResponse {
   updatedAt: string
   /** Showcase listing: shown on the site, but it cannot be quoted, booked or paid. */
   demo: boolean
+  airbnbListingUrl: string | null
+  bookingListingUrl: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -558,6 +560,7 @@ export interface CancellationQuoteResponse {
 
 /** Which payment options the public booking site may offer. */
 export interface PaymentConfigResponse {
+  directBookingEnabled: boolean
   cardPaymentsEnabled: boolean
   publishableKey: string | null
 }
@@ -656,6 +659,8 @@ export interface PublicPropertyResponse {
   photos: PropertyPhotoResponse[]
   /** Showcase listing: shown on the site, but it cannot be quoted, booked or paid. */
   demo: boolean
+  airbnbListingUrl: string | null
+  bookingListingUrl: string | null
 }
 
 export interface PublicReservationResponse {

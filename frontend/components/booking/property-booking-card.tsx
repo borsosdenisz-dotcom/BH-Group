@@ -6,7 +6,7 @@ import { Calendar, Minus, Plus } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { OnlineBookingUnavailable } from "@/components/booking/online-booking-unavailable"
+import { OtaBookingActions } from "@/components/booking/ota-booking-actions"
 import { parseLocalDate } from "@/lib/date"
 import { cn } from "@/lib/utils"
 import type { PriceQuoteResponse, PublicPropertyResponse } from "@/lib/api/types"
@@ -55,6 +55,29 @@ export function PropertyBookingCard({
     !property.basePricePerNight && quote?.totalAmount != null && quote.nights > 0
       ? quote.totalAmount / quote.nights
       : null
+
+  if (!onlineBookingAvailable) {
+    return (
+      <Card id="booking-options" className={cn("gap-4 py-5", className)}>
+        <CardContent className="flex flex-col gap-5 px-5">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tarif orientativ</p>
+            {property.basePricePerNight != null ? (
+              <p className="mt-1 flex items-baseline gap-1">
+                <span className="text-2xl font-semibold tracking-tight">
+                  {formatPrice(property.basePricePerNight)} {property.currency}
+                </span>
+                <span className="text-sm text-muted-foreground">/ noapte</span>
+              </p>
+            ) : (
+              <p className="mt-1 text-base font-medium text-muted-foreground">Preț disponibil pe platformă</p>
+            )}
+          </div>
+          <OtaBookingActions property={property} />
+        </CardContent>
+      </Card>
+    )
+  }
 
   const ctaState = !hasDates
     ? "no-dates"
@@ -216,13 +239,6 @@ export function PropertyBookingCard({
           <p className="rounded-lg bg-muted/60 px-3 py-2.5 text-center text-sm text-muted-foreground">
             Anunț demonstrativ: prețul este orientativ, iar proprietatea nu se poate rezerva.
           </p>
-        ) : !onlineBookingAvailable ? (
-          <>
-            <Button size="lg" disabled className="w-full">
-              Rezervare online indisponibilă
-            </Button>
-            <OnlineBookingUnavailable />
-          </>
         ) : ctaState === "available" ? (
           <Link href={bookingHref} className={cn(buttonVariants({ size: "lg" }), "w-full")}>
             Rezervă
@@ -237,7 +253,7 @@ export function PropertyBookingCard({
           </Button>
         )}
 
-        {onlineBookingAvailable && !isDemo && (
+        {!isDemo && (
           <p className="text-center text-xs text-muted-foreground">
             Plătești online cu cardul, iar rezervarea se confirmă automat imediat după plată.
           </p>

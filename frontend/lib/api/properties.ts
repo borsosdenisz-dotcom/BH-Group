@@ -57,6 +57,8 @@ export interface PropertyPayload {
   lateCheckoutTime?: string | null
   lateCheckoutFee?: number | null
   demo: boolean
+  airbnbListingUrl?: string | null
+  bookingListingUrl?: string | null
 }
 
 export interface SeasonalRatePayload {

@@ -1,39 +1,55 @@
 "use client"
 
-import { MessageCircle, Sparkles, TrendingUp, Wallet } from "lucide-react"
+import { BadgeCheck, CalendarClock, ListChecks, MessageCircle, TrendingUp, Wallet } from "lucide-react"
 import { Reveal, RevealGroup, RevealItem } from "@/components/marketing/reveal"
 
 const SERVICES = [
   {
-    icon: TrendingUp,
+    icon: ListChecks,
     number: "01",
-    title: "Prețuri adaptate sezonului",
+    title: "Administrarea anunțurilor Airbnb și Booking.com",
     description:
-      "Stabilim tarife diferite pe weekend și sezoane, ca proprietatea ta să rămână competitivă pe parcursul anului.",
+      "Pregătim conținutul și administrăm anunțurile pe canalele stabilite împreună, fără a promite afiliere oficială cu platformele.",
     color: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
   },
   {
-    icon: Sparkles,
-    number: "02",
-    title: "Curățenie gestionată pentru fiecare sejur",
-    description:
-      "Fiecare sejur are o sarcină de curățenie alocată și urmărită în sistem, cu protocoale de igienă profesionale.",
-    color: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  },
-  {
     icon: MessageCircle,
-    number: "03",
-    title: "Comunicare directă cu oaspeții",
+    number: "02",
+    title: "Comunicare cu oaspeții",
     description:
-      "Răspundem întrebărilor, gestionăm check-in/check-out și rezolvăm orice situație — în română și engleză.",
+      "Gestionăm întrebările și informațiile necesare sejurului, în limitele serviciilor agreate pentru proprietate.",
     color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
   },
   {
-    icon: Wallet,
+    icon: TrendingUp,
+    number: "03",
+    title: "Prețuri adaptate sezonului",
+    description:
+      "Analizăm contextul proprietății și ajustăm tarifele în funcție de perioadă, fără garanții de venit sau ocupare.",
+    color: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
+  },
+  {
+    icon: CalendarClock,
     number: "04",
+    title: "Coordonare check-in și check-out",
+    description:
+      "Organizăm sosirea și plecarea oaspeților conform regulilor și accesului disponibil la fiecare proprietate.",
+    color: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+  },
+  {
+    icon: BadgeCheck,
+    number: "05",
+    title: "Curățenie și verificarea proprietății",
+    description:
+      "Coordonăm curățenia și verificăm starea proprietății între sejururi pe baza procesului stabilit la onboarding.",
+    color: "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+  },
+  {
+    icon: Wallet,
+    number: "06",
     title: "Rapoarte financiare transparente",
     description:
-      "Vezi în orice moment veniturile, cheltuielile și ocuparea proprietății tale, fără să ceri nimic nimănui.",
+      "Centralizăm veniturile și costurile în rapoarte care te ajută să urmărești rezultatele proprietății.",
     color: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
   },
 ]
@@ -51,7 +67,7 @@ export function ServicesSection() {
         </p>
       </Reveal>
 
-      <RevealGroup stagger={0.1} className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-border/60 bg-border/60 sm:grid-cols-2">
+      <RevealGroup stagger={0.08} className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-border/60 bg-border/60 sm:grid-cols-2 lg:grid-cols-3">
         {SERVICES.map((service) => (
           <RevealItem key={service.number} className="group relative bg-card p-8 transition-colors hover:bg-muted/40">
             <span className="text-xs font-medium text-muted-foreground/60">{service.number}</span>

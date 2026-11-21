@@ -11,9 +11,10 @@ import { SiteBackgroundVideo } from "@/components/marketing/site-background-vide
 import { PentruProprietariHero } from "@/components/marketing/pentru-proprietari-hero"
 
 export const metadata: Metadata = {
-  title: "Listează-ți proprietatea",
+  title: "Administrare proprietăți pentru închirieri pe termen scurt",
   description:
-    "Administrare premium pentru proprietatea ta — curățenie, comunicare cu oaspeții și rapoarte financiare transparente.",
+    "Administrare anunțuri Airbnb și Booking.com, comunicare cu oaspeții, coordonare operațională și raportare financiară pentru proprietari.",
+  alternates: { canonical: "/pentru-proprietari" },
 }
 
 export default function PentruProprietariPage() {

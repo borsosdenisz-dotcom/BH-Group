@@ -4,6 +4,7 @@ import com.bhstays.pms.common.exception.BadRequestException;
 import com.bhstays.pms.common.exception.DemoPropertyException;
 import com.bhstays.pms.common.exception.ResourceNotFoundException;
 import com.bhstays.pms.common.exception.ServiceUnavailableException;
+import com.bhstays.pms.config.AppProperties;
 import com.bhstays.pms.domain.Property;
 import com.bhstays.pms.dto.messaging.MessageResponse;
 import com.bhstays.pms.dto.payment.CheckoutSessionResponse;
@@ -34,6 +35,7 @@ public class PublicReservationService {
     private final PricingService pricingService;
     private final PropertyRepository propertyRepository;
     private final MessageService messageService;
+    private final AppProperties appProperties;
     /**
      * Absent when no Stripe key is configured. Public booking is card-only,
      * so without it the site takes no public bookings at all - no hold, no
@@ -43,6 +45,9 @@ public class PublicReservationService {
 
     static final String ONLINE_BOOKING_UNAVAILABLE =
             "Rezervarea online nu este momentan disponibilă. Te rugăm să ne contactezi direct.";
+    static final String DIRECT_BOOKING_DISABLED = "DIRECT_BOOKING_DISABLED";
+    static final String DIRECT_BOOKING_DISABLED_MESSAGE =
+            "Rezervarea directă este dezactivată momentan. Verifică disponibilitatea pe platforma de rezervare.";
 
     /** A demo property is never reported as available - it has no bookable dates. */
     @Transactional(readOnly = true)
@@ -79,6 +84,7 @@ public class PublicReservationService {
     @Transactional
     public PublicBookingCheckoutResponse createBooking(PublicBookingRequest request) {
         propertyRepository.findById(request.propertyId()).ifPresent(PublicReservationService::assertNotDemo);
+        assertDirectBookingEnabled();
         if (request.paymentMethod() != null && !PublicBookingRequest.ONLINE_CARD.equals(request.paymentMethod())) {
             throw new BadRequestException("Rezervarea online se poate plăti doar cu cardul.");
         }
@@ -106,6 +112,7 @@ public class PublicReservationService {
         // A hold taken before the property became demo keeps its token; it
         // must not be payable either. StripeCheckoutService re-checks under lock.
         assertNotDemo(reservationService.getByManagementToken(token).getProperty());
+        assertDirectBookingEnabled();
         StripeCheckoutService checkout = stripeCheckoutService.orElseThrow(() ->
                 new ServiceUnavailableException("ONLINE_BOOKING_UNAVAILABLE", ONLINE_BOOKING_UNAVAILABLE));
         return openCheckout(checkout, token);
@@ -125,6 +132,12 @@ public class PublicReservationService {
     static void assertNotDemo(Property property) {
         if (property.isDemo()) {
             throw new DemoPropertyException();
+        }
+    }
+
+    private void assertDirectBookingEnabled() {
+        if (!appProperties.isPublicDirectBookingEnabled()) {
+            throw new ServiceUnavailableException(DIRECT_BOOKING_DISABLED, DIRECT_BOOKING_DISABLED_MESSAGE);
         }
     }
 

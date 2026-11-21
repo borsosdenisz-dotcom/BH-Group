@@ -33,6 +33,21 @@ if (!window.ResizeObserver) {
   }
 }
 
+// Framer Motion's whileInView features need this browser API. Tests using
+// marketing sections only need observation to be available, not viewport
+// geometry simulation.
+if (!globalThis.IntersectionObserver) {
+  globalThis.IntersectionObserver = class IntersectionObserverMock {
+    readonly root = null
+    readonly rootMargin = "0px"
+    readonly thresholds = [0]
+    disconnect() {}
+    observe() {}
+    takeRecords(): IntersectionObserverEntry[] { return [] }
+    unobserve() {}
+  } as unknown as typeof IntersectionObserver
+}
+
 // jsdom throws "not implemented" for these — base-ui's popup positioning
 // and pointer-capture logic call them during open/close.
 if (!Element.prototype.hasPointerCapture) {

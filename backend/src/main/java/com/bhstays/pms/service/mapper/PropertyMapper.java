@@ -67,7 +67,9 @@ public class PropertyMapper {
                 documents.stream().map(this::toDocumentResponse).toList(),
                 property.getCreatedAt(),
                 property.getUpdatedAt(),
-                property.isDemo()
+                property.isDemo(),
+                property.getAirbnbListingUrl(),
+                property.getBookingListingUrl()
         );
     }
 

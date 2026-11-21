@@ -14,7 +14,7 @@ export function SiteFooter() {
             BH Stays
           </div>
           <p className="max-w-xs text-sm text-muted-foreground">
-            Administrare premium de proprietăți pentru închirieri pe termen scurt, cu rezervare directă prin platforma noastră.
+            Administrare de proprietăți pentru închirieri pe termen scurt, cu prezență pe platforme de rezervare.
           </p>
         </div>
 

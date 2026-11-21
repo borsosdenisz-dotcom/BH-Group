@@ -28,7 +28,15 @@ export default function BookLayout({
           </span>
           BH Stays
         </Link>
-        <ThemeToggle />
+        <div className="flex items-center gap-3">
+          <Link
+            href="/pentru-proprietari"
+            className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground sm:text-sm"
+          >
+            Pentru proprietari
+          </Link>
+          <ThemeToggle />
+        </div>
       </header>
       <main className={cn("flex-1 py-8", !ownGutters && "px-6")}>{children}</main>
       <footer className="flex items-center justify-center gap-4 px-6 py-6 text-center text-xs text-muted-foreground">

@@ -73,7 +73,7 @@ export function PropertiesShowcase() {
                     className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-neutral-900 backdrop-blur-sm"
                   >
                     {property.basePricePerNight
-                      ? `${property.basePricePerNight} ${property.currency} / noapte`
+                      ? `Orientativ: ${property.basePricePerNight} ${property.currency} / noapte`
                       : "Preț la cerere"}
                   </motion.div>
                 </div>

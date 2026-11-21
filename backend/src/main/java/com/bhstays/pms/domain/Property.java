@@ -181,6 +181,12 @@ public class Property extends BaseEntity {
     @Builder.Default
     private boolean demo = false;
 
+    @Column(name = "airbnb_listing_url", length = 500)
+    private String airbnbListingUrl;
+
+    @Column(name = "booking_listing_url", length = 500)
+    private String bookingListingUrl;
+
     @Column(name = "ical_export_token", unique = true)
     private String icalExportToken;
 

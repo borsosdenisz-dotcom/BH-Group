@@ -22,6 +22,12 @@ public class AppProperties {
     private Assistant assistant = new Assistant();
     private Stripe stripe = new Stripe();
     private PricingAi pricingAi = new PricingAi();
+    /**
+     * Explicit launch gate for unauthenticated reservations. Stripe being
+     * configured is necessary, but never turns public direct booking on by
+     * itself. Defaults to false through both Java and application.yml.
+     */
+    private boolean publicDirectBookingEnabled = false;
 
     @Getter
     @Setter

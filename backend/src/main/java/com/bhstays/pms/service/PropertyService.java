@@ -47,6 +47,8 @@ import com.bhstays.pms.repository.PropertyPhotoRepository;
 import com.bhstays.pms.repository.PropertyRepository;
 import com.bhstays.pms.repository.PropertySpecifications;
 import com.bhstays.pms.service.mapper.PropertyMapper;
+import com.bhstays.pms.validation.OtaListingUrlPolicy;
+import com.bhstays.pms.validation.OtaPlatform;
 @Service
 @RequiredArgsConstructor
 public class PropertyService {
@@ -151,6 +153,10 @@ public class PropertyService {
                 .lateCheckoutTime(request.lateCheckoutTime())
                 .lateCheckoutFee(request.lateCheckoutFee())
                 .demo(request.demo())
+                .airbnbListingUrl(OtaListingUrlPolicy.normalizeOrThrow(
+                        request.airbnbListingUrl(), OtaPlatform.AIRBNB))
+                .bookingListingUrl(OtaListingUrlPolicy.normalizeOrThrow(
+                        request.bookingListingUrl(), OtaPlatform.BOOKING))
                 .build();
 
         property = propertyRepository.save(property);
@@ -201,6 +207,10 @@ public class PropertyService {
         property.setLateCheckoutTime(request.lateCheckoutTime());
         property.setLateCheckoutFee(request.lateCheckoutFee());
         property.setDemo(request.demo());
+        property.setAirbnbListingUrl(OtaListingUrlPolicy.normalizeOrThrow(
+                request.airbnbListingUrl(), OtaPlatform.AIRBNB));
+        property.setBookingListingUrl(OtaListingUrlPolicy.normalizeOrThrow(
+                request.bookingListingUrl(), OtaPlatform.BOOKING));
 
         property = propertyRepository.save(property);
         if (commissionChanged(previousCommission, property.getCommissionPercent())) {

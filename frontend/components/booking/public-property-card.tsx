@@ -1,6 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import { Bath, BedDouble, Building2, MapPin, Users } from "lucide-react"
+import { ArrowRight, Bath, BedDouble, Building2, MapPin, Users } from "lucide-react"
 import { DemoBadge } from "@/components/booking/demo-property-banner"
 import type { PublicPropertySummaryResponse } from "@/lib/api/types"
 import { FACILITY_LABELS, PROPERTY_TYPE_LABELS } from "@/lib/property-labels"
@@ -39,7 +39,7 @@ export function PublicPropertyCard({
         {property.demo && <DemoBadge className="absolute right-3 top-3" />}
         {property.basePricePerNight != null && (
           <div className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1.5 shadow-sm backdrop-blur-sm">
-            <p className="text-[10px] font-medium uppercase tracking-wide text-neutral-500">Preț de la</p>
+            <p className="text-[10px] font-medium uppercase tracking-wide text-neutral-500">Tarif orientativ de la</p>
             <p className="text-sm font-semibold text-neutral-900">
               {formatPrice(property.basePricePerNight)} {property.currency}
             </p>
@@ -87,6 +87,15 @@ export function PublicPropertyCard({
             )}
           </div>
         )}
+        {!property.demo && (
+          <p className="text-[11px] text-muted-foreground">
+            Disponibilitate verificată pe platforma de rezervare
+          </p>
+        )}
+        <span className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-primary">
+          Vezi proprietatea
+          <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+        </span>
       </div>
     </Link>
   )

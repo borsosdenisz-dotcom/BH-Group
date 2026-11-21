@@ -28,6 +28,8 @@ const baseProperty: PublicPropertyResponse = {
   facilities: [],
   photos: [],
   demo: false,
+  airbnbListingUrl: null,
+  bookingListingUrl: null,
 }
 
 const baseQuote: PriceQuoteResponse = {
@@ -111,16 +113,16 @@ describe("PropertyBookingCard", () => {
       expect(screen.queryByText(/confirmă manual/)).not.toBeInTheDocument()
     })
 
-    it("disables booking and shows the contact details when online card payment is unavailable", () => {
+    it("hides direct booking and shows the availability fallback when direct booking is unavailable", () => {
       renderCard({
         checkIn: "2026-09-01",
         checkOut: "2026-09-05",
         quote: baseQuote,
         onlineBookingAvailable: false,
       })
-      expect(screen.getByRole("button", { name: "Rezervare online indisponibilă" })).toBeDisabled()
+      expect(screen.getByRole("button", { name: "Solicită disponibilitatea" })).toBeEnabled()
       expect(screen.queryByRole("link", { name: "Rezervă" })).not.toBeInTheDocument()
-      expect(screen.getByText("Rezervarea online nu este momentan disponibilă.")).toBeInTheDocument()
+      expect(screen.getByText("Tarif orientativ")).toBeInTheDocument()
     })
   })
 

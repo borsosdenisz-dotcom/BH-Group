@@ -13,17 +13,17 @@ const STEPS = [
   {
     icon: ClipboardList,
     title: "Pregătire & listare",
-    description: "Fotografiem profesional, scriem anunțul și publicăm pe canalele relevante și prin rezervare directă.",
+    description: "Pregătim proprietatea și conținutul anunțurilor pentru Airbnb, Booking.com și canalele agreate.",
   },
   {
     icon: CalendarCheck,
     title: "Preluăm operațiunea",
-    description: "Curățenie, check-in, comunicare cu oaspeții — coordonate prin sistem, din prima rezervare.",
+    description: "Stabilim regulile operaționale, accesul, curățenia, check-in-ul și comunicarea cu oaspeții.",
   },
   {
     icon: Rocket,
     title: "Tu încasezi venitul",
-    description: "Primești deconturi periodice, cu raport detaliat al veniturilor și cheltuielilor.",
+    description: "Urmărești rezultatele prin rapoarte ale veniturilor și cheltuielilor înregistrate.",
   },
 ]
 
@@ -35,7 +35,7 @@ export function ProcessSection() {
         <Reveal className="max-w-2xl">
           <span className="text-sm font-medium text-primary">Cum funcționează</span>
           <h2 className="mt-3 text-balance font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
-            De la primul apel, la primul venit
+            Un onboarding clar, pas cu pas
           </h2>
         </Reveal>
 

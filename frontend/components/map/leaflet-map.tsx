@@ -62,6 +62,9 @@ export default function LeafletMap({
   // than read from the DOM: markers have no element until the map has a view.
   const pricePinIdsRef = useRef<Set<string>>(new Set())
   const pointsRef = useRef<LatLngPoint[]>([])
+  // Leaflet throws on getBounds()/panTo() until the map has a center and zoom.
+  // A map that starts hidden (the mobile listing) has none until it is shown.
+  const hasViewRef = useRef(false)
   const iconsRef = useRef<{
     default: import("leaflet").Icon
     active: import("leaflet").Icon
@@ -88,7 +91,10 @@ export default function LeafletMap({
       map.setView([view.lat, view.lng], view.zoom)
     } else if (view.kind === "fit") {
       map.fitBounds(L.latLngBounds(view.points), { padding: [48, 48], maxZoom: view.maxZoom })
+    } else {
+      return
     }
+    hasViewRef.current = true
   }
 
   async function ensureMap() {
@@ -204,7 +210,7 @@ export default function LeafletMap({
       }
       marker.setZIndexOffset(active ? 1000 : 0)
     })
-    if (pan && id) {
+    if (pan && id && hasViewRef.current) {
       const active = markerRefsRef.current.get(id)
       // Only move the map when the highlighted pin is out of view, so
       // hovering down the list does not keep dragging it around.
@@ -242,6 +248,7 @@ export default function LeafletMap({
       mapRef.current?.remove()
       mapRef.current = null
       markersLayerRef.current = null
+      hasViewRef.current = false
     }
   }, [])
 

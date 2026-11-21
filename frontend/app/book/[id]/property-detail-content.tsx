@@ -53,16 +53,14 @@ function PropertyDetailInner({ id }: { id: string }) {
   }
 
   // A demo property cannot be quoted (the backend answers 409), so don't ask.
+  const paymentConfig = usePaymentConfig()
+  const directBookingEnabled = paymentConfig.data?.directBookingEnabled === true
   const quoteQuery = usePublicQuote(
-    property && !property.demo ? property.id : "",
+    property && !property.demo && directBookingEnabled ? property.id : "",
     checkIn ?? "",
     checkOut ?? "",
     guests
   )
-  const paymentConfig = usePaymentConfig()
-  // Card-only: no online payment means no online booking. While the config
-  // is still loading the CTA stays as is; the booking page re-checks anyway.
-  const onlineBookingAvailable = paymentConfig.isLoading || paymentConfig.data?.cardPaymentsEnabled === true
 
   function scrollToAvailability() {
     availabilityRef.current?.scrollIntoView({
@@ -132,7 +130,7 @@ function PropertyDetailInner({ id }: { id: string }) {
             bookingHref={bookingHref}
             onGuestsChange={(next) => updateSelection({ guests: next })}
             onScrollToCalendar={scrollToAvailability}
-            onlineBookingAvailable={onlineBookingAvailable}
+            onlineBookingAvailable={directBookingEnabled}
           />
         </aside>
 
@@ -164,6 +162,12 @@ function PropertyDetailInner({ id }: { id: string }) {
             <Card>
               <CardContent className="flex flex-col gap-4">
                 <h2 className="font-heading text-lg font-semibold tracking-tight">Disponibilitate</h2>
+                {!directBookingEnabled && !property.demo && (
+                  <p className="text-sm text-muted-foreground">
+                    Calendar orientativ, bazat inclusiv pe sincronizări iCal periodice. iCal nu garantează
+                    actualizare în timp real; disponibilitatea finală se verifică pe platforma de rezervare.
+                  </p>
+                )}
                 <AvailabilityCalendar
                   propertyId={property.id}
                   minStayNights={property.minStayNights}
@@ -178,7 +182,7 @@ function PropertyDetailInner({ id }: { id: string }) {
         </div>
       </div>
 
-      {!property.demo && (
+      {!property.demo && directBookingEnabled && (
         <>
           <MobileBookingBar
             property={property}
@@ -187,7 +191,7 @@ function PropertyDetailInner({ id }: { id: string }) {
             quote={quoteQuery.data}
             isQuoteLoading={quoteQuery.isLoading}
             bookingHref={bookingHref}
-            onlineBookingAvailable={onlineBookingAvailable}
+            onlineBookingAvailable={directBookingEnabled}
           />
           {/* Compensates for the fixed mobile bar so the last section isn't hidden behind it. */}
           <div className="h-24 lg:hidden" aria-hidden />
